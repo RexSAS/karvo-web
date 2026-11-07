@@ -92,3 +92,16 @@ test('an old hello cannot be used to replay newer frames', async () => {
   await c.phone.decode(oldHello);
   await assert.rejects(c.phone.decode(m), ProtocolError);
 });
+
+test('switching hellos A → B → A cannot replay A-session commands', async () => {
+  const c = await pair();
+  const helloA = await c.pc.hello({});
+  await c.phone.decode(helloA);
+  await c.pc.decode(await c.phone.hello({}));
+  const cmd = await c.pc.encode('command', { id: 1 });
+  await c.phone.decode(cmd);
+  const pcB = createChannel({ sendKey: c.k.pcToPhone, recvKey: c.k.phoneToPc, roomId: c.roomId, sendDir: 1, recvDir: 2 });
+  await c.phone.decode(await pcB.hello({}));
+  await assert.rejects(c.phone.decode(helloA), ProtocolError);
+  await assert.rejects(c.phone.decode(cmd), ProtocolError);
+});

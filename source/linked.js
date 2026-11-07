@@ -27,7 +27,10 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
   function command(op, args) {
     const id = nextId++;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { if (pending.delete(id)) reject(new Error('Phone disconnected')); }, timeoutMs);
+      const timer = setTimeout(() => {
+        // The phone may still have applied it: say so, or a retry could add the lesson twice.
+        if (pending.delete(id)) reject(new Error('No answer from the phone · check before trying again'));
+      }, timeoutMs);
       pending.set(id, { resolve: v => { clearTimeout(timer); resolve(v); }, reject: e => { clearTimeout(timer); reject(e); } });
       connection.send('command', { id, op, args }).catch(() => {
         const p = pending.get(id);
@@ -54,14 +57,18 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
 export const needsRestore = (phone, backup) => phone.lessons.length === 0 ? backup?.lessons?.length ?? 0 : 0;
 
 /**
- * The PC backup while linked. A phone with no lessons must not wipe a backup that could restore it,
- * so empty snapshots are held back until the user answers the restore question (allowEmpty).
+ * The PC backup while linked. A phone that arrives with no lessons must not wipe a backup that could restore it,
+ * so empty snapshots are held back until the phone has had lessons (after that, an empty phone is a real deletion).
+ * allowEmpty() is for an explicit "yes, drop the PC copy".
  */
 export function guardedStore(inner, backupCount) {
   let allow = backupCount === 0;
   return {
     inner,
     allowEmpty() { allow = true; },
-    save: snapshot => (snapshot.lessons.length === 0 && !allow ? Promise.resolve() : inner.save(snapshot)),
+    save(snapshot) {
+      if (snapshot.lessons.length > 0) allow = true;
+      return snapshot.lessons.length === 0 && !allow ? Promise.resolve() : inner.save(snapshot);
+    },
   };
 }

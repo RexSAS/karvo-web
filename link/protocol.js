@@ -14,6 +14,7 @@ const enc = new TextEncoder(), dec = new TextDecoder();
 export function createChannel({ sendKey, recvKey, roomId, sendDir, recvDir }) {
   const mySession = b64url(randomBytes(16));
   let peerSession = null, sendQ = 0, lastQ = 0;
+  const seen = new Set(); // every peer session this socket has seen: switching back to an old one would reset q
   const frame = obj => seal(sendKey, roomId, sendDir, enc.encode(JSON.stringify(obj)));
 
   return {
@@ -33,6 +34,8 @@ export function createChannel({ sendKey, recvKey, roomId, sendDir, recvDir }) {
         if (msg.v !== PROTOCOL_VERSION) throw new ProtocolError('protocol version mismatch', 'version', { peerVersion: msg.v, peerApp: msg.app });
         if (typeof msg.session !== 'string' || !msg.session) throw new ProtocolError('hello without session');
         if (msg.session === peerSession) return { ...msg, isNew: false }; // re-announcement: no reset
+        if (seen.has(msg.session)) throw new ProtocolError('hello from an earlier session');
+        seen.add(msg.session);
         peerSession = msg.session; lastQ = 0; // a (re)connected peer starts a new session
         return { ...msg, isNew: true };
       }

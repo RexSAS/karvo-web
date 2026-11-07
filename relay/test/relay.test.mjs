@@ -78,3 +78,14 @@ test('DELETE removes the room', async () => {
   assert.equal((await fetch(`${http()}/room/${r.roomId}?role=pc&auth=${r.pc}`, { method: 'DELETE' })).status, 204);
   assert.equal((await fetch(url(r, 'phone', r.phone).replace(/^ws/, 'http'))).status, 404);
 });
+
+test('browsers may call the relay from the web app (CORS for GET and DELETE)', async () => {
+  const r = await room();
+  const pre = await fetch(`${http()}/room/${r.roomId}?role=pc&auth=${r.pc}`, { method: 'OPTIONS', headers: { Origin: 'https://karvo.rxsas.it', 'Access-Control-Request-Method': 'DELETE' } });
+  assert.equal(pre.status, 204);
+  assert.equal(pre.headers.get('access-control-allow-origin'), '*');
+  assert.match(pre.headers.get('access-control-allow-methods'), /DELETE/);
+  const miss = await fetch(`${http()}/room/${r.roomId}?role=phone&auth=${r.phone}`, { headers: { Origin: 'https://karvo.rxsas.it' } });
+  assert.equal(miss.status, 404);
+  assert.equal(miss.headers.get('access-control-allow-origin'), '*');
+});

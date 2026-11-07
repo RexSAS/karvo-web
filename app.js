@@ -58,8 +58,8 @@ export const actions = {
   },
   linkPhone() {
     openLinkDialog({ relayUrl: RELAY, appVersion: APP_VERSION, onLinked: async (conn, record) => {
+      startLink(record, conn); // first: the phone's first snapshot may already be on its way
       try { await state.store?.savePairing(record); } catch { state.backup.storageError = true; }
-      startLink(record, conn);
     } });
   },
   async unlink() {
@@ -108,18 +108,18 @@ function startLink(record, existing = null) {
   const backupSnap = state.snapshot;
   const store = guardedStore(state.store ?? { save: async () => {} }, backupSnap.lessons.length);
   const linked = createLinkedSource(conn, store, { peerName: record.peerName });
-  let asked = false;
+  let asked = false, declined = false;
 
   linked.subscribe(async snap => {
     if (conn !== state.conn) return;
     useSource(linked);
-    if (asked) return;
+    if (asked || declined) return;
     asked = true;
     const n = needsRestore(snap, backupSnap);
     if (!n) return;
     if (confirm(`Restore ${n} lessons to the phone?\n\nYour phone has no lessons. This PC has a backup of ${n}.`))
       linked.restoreAll(backupSnap.lessons).catch(e => alert(e.message));
-    else store.allowEmpty();
+    else declined = true; // keep the PC backup (the guard holds empty snapshots back) and don't ask again in this tab
   });
   conn.on('peer', p => {
     state.link.peerName = p.name;

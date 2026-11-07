@@ -68,11 +68,6 @@ test('losing the phone while waiting rejects with Phone disconnected', async () 
   await assert.rejects(p, /Phone disconnected/);
 });
 
-test('no ack in time rejects with Phone disconnected', async () => {
-  const c = fakeConnection(), src = createLinkedSource(c, fakeStore(), { timeoutMs: 20 });
-  await assert.rejects(src.setSeasonStart(12), /Phone disconnected/);
-});
-
 test('CSV import parses on the PC, sends the lessons, returns the phone result', async () => {
   const c = fakeConnection(), src = createLinkedSource(c, fakeStore());
   await assert.rejects(src.importCsv('nope'), e => e instanceof BackupFormatError);
@@ -112,4 +107,19 @@ test('an empty phone snapshot never overwrites a non-empty backup until the rest
   const g3 = guardedStore(fakeStore(), 0);
   await g3.save({ lessons: [] });
   assert.deepEqual(g3.inner.saved, { lessons: [] });
+});
+
+test('declining restore keeps the backup; once the phone has had lessons, deleting the last one is saved', async () => {
+  const inner = fakeStore(), g = guardedStore(inner, 5);
+  await g.save({ lessons: [] });
+  await g.save({ lessons: [] });
+  assert.equal(inner.saved, null);
+  await g.save({ lessons: [L] });
+  await g.save({ lessons: [] });
+  assert.deepEqual(inner.saved, { lessons: [] });
+});
+
+test('a timeout says the phone did not answer, not that the change failed', async () => {
+  const c = fakeConnection(), src = createLinkedSource(c, fakeStore(), { timeoutMs: 20 });
+  await assert.rejects(src.addLesson(L), /No answer from the phone/);
 });

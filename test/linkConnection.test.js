@@ -36,12 +36,12 @@ class FakeWS {
   receive(bytes) { this.onmessage?.({ data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }); }
 }
 
-async function setup(extra = {}) {
+async function setup(extra = {}, opts = {}) {
   FakeWS.all = [];
   const roomId = randomBytes(16), secret = randomBytes(32), k = await deriveKeys(secret, roomId);
   const timers = fakeTimers(), states = [], messages = [], peers = [];
   const conn = createConnection({ record: { roomId: b64url(roomId), secret: b64url(secret), peerName: 'Pixel', ...extra }, relayUrl: 'wss://relay.test',
-    WebSocketImpl: FakeWS, appVersion: 'web', myName: 'Chrome on Linux', timers });
+    WebSocketImpl: FakeWS, appVersion: 'web', myName: 'Chrome on Linux', timers, fetchImpl: opts.fetchImpl ?? (async () => ({ status: 426 })) });
   conn.on('state', s => states.push(s)); conn.on('message', m => messages.push(m)); conn.on('peer', p => peers.push(p));
   const phone = () => createChannel({ sendKey: k.phoneToPc, recvKey: k.pcToPhone, roomId, sendDir: 2, recvDir: 1 });
   return { conn, timers, states, messages, peers, k, roomId, phone, ws: () => FakeWS.all.at(-1) };
@@ -153,5 +153,70 @@ test('stop sends bye and does not reconnect', async () => {
   assert.equal((await ch.decode(ws.sent.at(-1))).t, 'bye');
   assert.equal(ws.readyState, 3);
   const n = FakeWS.all.length; await t.timers.tick(120000);
+  assert.equal(FakeWS.all.length, n);
+});
+
+test('frames are handled in arrival order even when a big one decrypts slower', async () => {
+  const t = await setup();
+  const ch = await openAndGreet(t);
+  const big = await ch.encode('snapshot', { lessons: [], pad: 'x'.repeat(900000) });
+  const small = await ch.encode('ack', { id: 1, ok: true });
+  t.ws().receive(big); t.ws().receive(small);
+  for (let i = 0; i < 40 && t.messages.length < 2; i++) await flush();
+  assert.deepEqual(t.messages.map(m => m.t), ['snapshot', 'ack']);
+  assert.equal(t.states.at(-1), 'connected');
+});
+
+test('concurrent sends leave in sequence order', async () => {
+  const t = await setup();
+  const ch = await openAndGreet(t);
+  const before = t.ws().sent.length;
+  await Promise.all([t.conn.send('snapshot', { pad: 'x'.repeat(900000) }), t.conn.send('ping')]);
+  const got = [];
+  for (const f of t.ws().sent.slice(before)) got.push((await ch.decode(f)).t);
+  assert.deepEqual(got, ['snapshot', 'ping']);
+});
+
+test('a room deleted while away ends as unlinked instead of retrying forever', async () => {
+  const t = await setup({}, { fetchImpl: async () => ({ status: 404 }) });
+  await t.conn.start(); await flush();
+  for (let i = 0; i < 3; i++) { t.ws().close(1006); await flush(); await t.timers.tick(60000); }
+  assert.equal(t.states.at(-1), 'unlinked');
+});
+
+test('a fresh pairing stops registering once its socket has opened', async () => {
+  const t = await setup({ unregistered: true });
+  await t.conn.start(); await flush();
+  t.ws().open(); await flush();
+  t.ws().close(1006); await flush(); await t.timers.tick(2000);
+  assert.doesNotMatch(t.ws().url, /register=/);
+});
+
+test('an older phone: outdated, but keeps retrying so an updated phone connects', async () => {
+  const t = await setup();
+  await t.conn.start(); await flush(); t.ws().open(); await flush();
+  const { seal } = await import('../link/crypto.js');
+  t.ws().receive(await seal(t.k.phoneToPc, t.roomId, 2, new TextEncoder().encode('{"t":"hello","v":0,"session":"x","app":"3.0"}'))); await flush();
+  assert.equal(t.states.at(-1), 'outdated');
+  assert.equal(t.conn.phoneNewer, false);
+  const n = FakeWS.all.length;
+  await t.timers.tick(61000);
+  assert.ok(FakeWS.all.length > n);
+  assert.equal(t.states.at(-1) === 'outdated' || t.states.at(-1) === 'connecting', true);
+});
+
+test('stop right after start opens no socket', async () => {
+  const t = await setup();
+  const p = t.conn.start(); t.conn.stop(); await p; await flush();
+  assert.equal(FakeWS.all.length, 0);
+});
+
+test('focusing the tab does not replace a socket that is waiting for the phone', async () => {
+  const t = await setup();
+  await t.conn.start(); await flush();
+  t.ws().close(1006); await flush(); await t.timers.tick(2000);
+  t.ws().open(); await flush();
+  const n = FakeWS.all.length;
+  t.conn.retryNow(); await flush();
   assert.equal(FakeWS.all.length, n);
 });

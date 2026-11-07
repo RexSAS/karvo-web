@@ -7,11 +7,22 @@ const MAX_PER_SECOND = 20;
 const ROLES = ['pc', 'phone'];
 const HASH = /^[0-9a-f]{64}$/;
 
+// The web app calls GET (is my room still there?) and DELETE (unlink) from the browser. Any origin is fine:
+// nothing works without a room's secret-derived token.
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS', 'Access-Control-Max-Age': '86400' };
+const withCors = r => {
+  if (r.status === 101) return r; // WebSocket upgrades pass through untouched
+  const out = new Response(r.body, r);
+  for (const [k, v] of Object.entries(CORS)) out.headers.set(k, v);
+  return out;
+};
+
 export default {
   async fetch(request, env) {
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const m = new URL(request.url).pathname.match(/^\/room\/([A-Za-z0-9_-]{22})$/);
-    if (!m) return new Response('Not found', { status: 404 });
-    return env.ROOM.get(env.ROOM.idFromName(m[1])).fetch(request);
+    if (!m) return withCors(new Response('Not found', { status: 404 }));
+    return withCors(await env.ROOM.get(env.ROOM.idFromName(m[1])).fetch(request));
   },
 };
 
