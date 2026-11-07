@@ -23,8 +23,6 @@ import { openLinkDialog } from './ui/link.js';
 import { students } from './domain/stats.js';
 
 const APP_VERSION = 'web-2';
-// shortcut: linking is hidden until the Android update with the link ships (open with ?link to test); remove then.
-const LINK_VISIBLE = new URLSearchParams(location.search).has('link');
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 // Testing only: point at a local relay (wrangler dev). Never another host, so a link can't be redirected.
@@ -84,7 +82,7 @@ function render() {
   const empty = source.status === 'backup' && snapshot.lessons.length === 0;
   $('empty').hidden = !empty;
   $('app').hidden = empty;
-  if (empty) renderEmpty($('empty'), { paired: state.link.paired, linkPhone: LINK_VISIBLE ? actions.linkPhone : null, importCsv: () => actions.importCsv().catch(e => alert(e.message)) });
+  if (empty) renderEmpty($('empty'), { paired: state.link.paired, linkPhone: actions.linkPhone, importCsv: () => actions.importCsv().catch(e => alert(e.message)) });
   else panels.forEach(([id, fn]) => fn($(id), state, actions));
   paintMoney(state.showMoney);
 }
@@ -159,7 +157,7 @@ async function boot() {
 await boot();
 addEventListener('resize', render);
 $('settings-btn').onclick = () => openSettings(state.source, () => state.snapshot,
-  params.has('demo') || !(LINK_VISIBLE || state.link.paired) ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone });
+  params.has('demo') ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone });
 
 // Tooltips for anything with data-tip (chart marks).
 const tip = $('tip');

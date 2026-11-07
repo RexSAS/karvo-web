@@ -29,7 +29,6 @@ export function openLinkDialog({ relayUrl, appVersion, onLinked }) {
       <p class="sub">In Karvo on your phone: Settings → Linked PCs → Link a PC, then scan this code.</p>
       <div class="qr" data-qr="${p.qrText}">${qr.createSvgTag({ cellSize: 6, margin: 3, scalable: true })}</div>
       <p class="sub" data-left>Expires in 2:00</p>
-      <p class="sub">Needs the next Karvo update on your phone.</p>
       <div class="err" role="alert"></div>
       <div class="btns"><button type="button" class="btn" data-cancel>Cancel</button></div>`;
     d.querySelector('[data-cancel]').onclick = close;
