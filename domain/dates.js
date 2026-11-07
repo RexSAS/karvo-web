@@ -21,3 +21,9 @@ export function formatHours(minutes) {
   if (m === 30) return `${h}.5 h`;
   return h ? `${h} h ${m}` : `${m} min`;
 }
+
+/** Today in another time zone (the phone's setting), falling back to this computer's today. */
+export function todayIn(timeZone, at = new Date()) {
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at); }
+  catch { return today(); }
+}
