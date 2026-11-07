@@ -13,6 +13,7 @@ import { renderCalendar } from './ui/calendar.js';
 import { renderLessons } from './ui/lessons.js';
 import { openLessonDialog } from './ui/lessonDialog.js';
 import { renderOverview } from './ui/overview.js';
+import { renderStats } from './ui/stats.js';
 import { students } from './domain/stats.js';
 
 const $ = id => document.getElementById(id);
@@ -43,7 +44,7 @@ export const actions = {
   },
 };
 
-const panels = [['lessons', renderLessons], ['calendar', renderCalendar], ['overview', renderOverview]]; // [element id, render(el, state, actions)]
+const panels = [['lessons', renderLessons], ['calendar', renderCalendar], ['overview', renderOverview], ['stats', renderStats]]; // [element id, render(el, state, actions)]
 
 function render() {
   const { source, snapshot } = state;
