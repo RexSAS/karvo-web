@@ -1,6 +1,6 @@
 // Right column: the selected month's hours, money and payment, plus everything still unpaid.
 import { earningsCents } from '../domain/earnings.js';
-import { formatHours, monthOf, today } from '../domain/dates.js';
+import { formatHours, monthOf, today, addMonths } from '../domain/dates.js';
 import { paidStatus, monthPaidOn, unpaidTotals } from '../domain/paid.js';
 import { students } from '../domain/stats.js';
 import { moneyHtml } from './money.js';
@@ -13,13 +13,17 @@ const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
 
 export function renderOverview(el, { snapshot, view, showMoney, source }, actions) {
   const { lessons, rateCents } = snapshot, inMonth = lessons.filter(l => monthOf(l.date) === view);
-  const minutes = sum(inMonth), status = paidStatus(inMonth), unpaidHere = inMonth.filter(l => !l.paidOn);
-  const unpaid = unpaidTotals(lessons, today(), rateCents);
+  const minutes = sum(inMonth), unpaid = unpaidTotals(lessons, today(), rateCents);
   const ro = source.canEdit ? '' : `disabled title="${READ_ONLY_TIP}"`;
-  const statusHtml = !inMonth.length ? '<span class="sub">No lessons</span>'
-    : status === 'PAID' ? `<span>✓ Paid ${new Date(monthPaidOn(inMonth) + 'T12:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })}</span>`
-    : `<span><span class="gold">${status === 'PARTLY_PAID' ? 'Partly paid' : 'Unpaid'} · </span>${moneyHtml(earningsCents(sum(unpaidHere), rateCents), 'gold')}</span>`;
-  const payBtn = !inMonth.length ? '' : status === 'PAID'
+  // The school pays a month after it ends, so the pay button sits on the month before the selected one.
+  const prev = addMonths(view, -1), inPrev = lessons.filter(l => monthOf(l.date) === prev);
+  const status = ls => {
+    if (!ls.length) return '<span class="sub">No lessons</span>';
+    const st = paidStatus(ls);
+    return st === 'PAID' ? `<span>✓ Paid ${new Date(monthPaidOn(ls) + 'T12:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })}</span>`
+      : `<span><span class="gold">${st === 'PARTLY_PAID' ? 'Partly paid' : 'Unpaid'} · </span>${moneyHtml(earningsCents(sum(ls.filter(l => !l.paidOn)), rateCents), 'gold')}</span>`;
+  };
+  const payBtn = !inPrev.length ? '' : paidStatus(inPrev) === 'PAID'
     ? `<button class="btn small" data-unpay ${ro}>Mark unpaid</button>`
     : `<button class="btn small gold" data-pay ${ro}>Mark paid</button>`;
   el.innerHTML = `<h2>Overview · ${monthName(view, { month: 'short', year: 'numeric' })}</h2>
@@ -27,15 +31,16 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
       <div class="kpi"><div class="l">Hours</div><div class="v">${formatHours(minutes)}</div></div>
       <div class="kpi"><div class="l">Earned</div><div class="row"><span class="v">${moneyHtml(earningsCents(minutes, rateCents))}</span>
         <button class="icon-btn" data-eye aria-pressed="${showMoney}" aria-label="${showMoney ? 'Hide' : 'Show'} money" title="${showMoney ? 'Hide' : 'Show'} money">${showMoney ? EYE_OFF : EYE}</button></div></div>
-      <div class="kpi"><div class="l">This month</div><div class="row">${statusHtml}${payBtn}</div></div>
+      <div class="kpi"><div class="l">This month</div><div class="row">${status(inMonth)}</div></div>
+      <div class="kpi"><div class="l">Last month · ${monthName(prev, { month: 'long' })}</div><div class="row">${status(inPrev)}${payBtn}</div></div>
       <div class="kpi"><div class="l">Lessons</div><div class="v">${inMonth.length}</div><div class="sub">${students(inMonth).length} students</div></div>
       <div class="kpi"><div class="l">Unpaid</div><div class="v">${moneyHtml(unpaid.earningsCents, 'gold')}</div>
         <div class="sub">${unpaid.months ? `${unpaid.months} month${unpaid.months > 1 ? 's' : ''} · ${formatHours(unpaid.minutes)}` : 'All paid'}</div>
         ${unpaid.byMonth.map(m => `<button class="um" data-m="${m.month}"><span>${monthName(m.month)}</span>${moneyHtml(m.earningsCents)}</button>`).join('')}</div>
     </div>`;
   el.querySelector('[data-eye]').onclick = actions.toggleMoney;
-  el.querySelector('[data-pay]')?.addEventListener('click', () => askPaidDate(view, d => source.markPaid(view, d)));
-  el.querySelector('[data-unpay]')?.addEventListener('click', () => { if (confirm(`Mark ${monthName(view)} as unpaid?`)) source.markUnpaid(view); });
+  el.querySelector('[data-pay]')?.addEventListener('click', () => askPaidDate(prev, d => source.markPaid(prev, d)));
+  el.querySelector('[data-unpay]')?.addEventListener('click', () => { if (confirm(`Mark ${monthName(prev)} as unpaid?`)) source.markUnpaid(prev); });
   el.querySelectorAll('.um').forEach(b => b.onclick = () => actions.setView(b.dataset.m));
 }
 
