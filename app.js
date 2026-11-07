@@ -14,6 +14,7 @@ import { renderLessons } from './ui/lessons.js';
 import { openLessonDialog } from './ui/lessonDialog.js';
 import { renderOverview } from './ui/overview.js';
 import { renderStats } from './ui/stats.js';
+import { openSettings } from './ui/settings.js';
 import { students } from './domain/stats.js';
 
 const $ = id => document.getElementById(id);
@@ -71,6 +72,7 @@ runSplash();
 state.source = await chooseSource();
 state.source.subscribe(snapshot => { state.snapshot = snapshot; render(); });
 addEventListener('resize', render);
+$('settings-btn').onclick = () => openSettings(state.source, state.snapshot);
 
 // Tooltips for anything with data-tip (chart marks).
 const tip = $('tip');
