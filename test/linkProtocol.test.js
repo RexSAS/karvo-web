@@ -61,13 +61,34 @@ test('encode before the peer hello throws', async () => {
   await assert.rejects(c.pc.encode('ping'));
 });
 
-test('a second hello on the same channel cannot reset the sequence', async () => {
+test('a repeated hello of the current session is ignored and does not reset the sequence', async () => {
   const c = await pair();
   const hello = await c.pc.hello({});
-  await c.phone.decode(hello);
+  assert.equal((await c.phone.decode(hello)).isNew, true);
   await c.pc.decode(await c.phone.hello({}));
   const m = await c.pc.encode('ping');
   await c.phone.decode(m);
-  await assert.rejects(c.phone.decode(hello), ProtocolError);
+  assert.equal((await c.phone.decode(hello)).isNew, false);
+  await assert.rejects(c.phone.decode(m), ProtocolError);
+});
+
+test('a reconnected peer (new session) is accepted, and its old frames are not', async () => {
+  const c = await pair(); await shake(c);
+  const old = await c.pc.encode('ping');
+  const pc2 = createChannel({ sendKey: c.k.pcToPhone, recvKey: c.k.phoneToPc, roomId: c.roomId, sendDir: 1, recvDir: 2 });
+  assert.equal((await c.phone.decode(await pc2.hello({}))).isNew, true);
+  await pc2.decode(await c.phone.hello({}));
+  await assert.rejects(c.phone.decode(old), ProtocolError);
+  assert.equal((await c.phone.decode(await pc2.encode('ping'))).t, 'ping');
+});
+
+test('an old hello cannot be used to replay newer frames', async () => {
+  const c = await pair();
+  const oldPc = createChannel({ sendKey: c.k.pcToPhone, recvKey: c.k.phoneToPc, roomId: c.roomId, sendDir: 1, recvDir: 2 });
+  const oldHello = await oldPc.hello({});
+  await shake(c);
+  const m = await c.pc.encode('command', { id: 1 });
+  await c.phone.decode(m);
+  await c.phone.decode(oldHello);
   await assert.rejects(c.phone.decode(m), ProtocolError);
 });
