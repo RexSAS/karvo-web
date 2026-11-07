@@ -1,0 +1,404 @@
+<!doctype html>
+<!-- PROTOTYPE, throwaway: PC layout mockup with fake in-memory data. Not the real app. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karvo PC Prototype</title>
+<style>
+:root {
+  /* Alpine Night, from app/src/main/java/com/karvo/ui/theme/Theme.kt */
+  --bg: #0B1220; --sky-top: #060A17; --sky-bottom: #0C1530;
+  --s1: #0E1626; --s2: #131C2E; --s3: #162034; --s4: #1A253A; --s5: #1C2840;
+  --primary: #7CC4FA; --on-primary: #04223A; --primary-c: #1B3A5C;
+  --gold: #F2C879; --ink: #E6ECF5; --muted: #9AA8BD; --outline: #3A4A66; --line: #2A3852;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; display: flex; flex-direction: column; background: radial-gradient(1200px 600px at 50% -10%, #24367C55, transparent), linear-gradient(var(--sky-top), var(--bg)); background-color: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Splash */
+#splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--sky-bottom); transition: opacity .3s; }
+#splash svg { width: 160px; transition: transform .3s; }
+#splash.out { opacity: 0; pointer-events: none; }
+#splash.out svg { transform: scale(1.15); }
+.m-far, .m-near { transform-box: fill-box; transform-origin: bottom; animation: rise .5s ease-out both; }
+.m-near { animation-delay: .15s; }
+.sun { transform-box: fill-box; transform-origin: center; animation: pop .3s .5s ease-out both; }
+@keyframes rise { from { transform: scaleY(0); } }
+@keyframes pop { from { transform: scale(0); } }
+
+/* Layout: the page never scrolls, only the inside of each section does */
+header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; flex: none; }
+header svg { width: 40px; height: 30px; }
+header h1 { font-size: 20px; margin: 0; letter-spacing: .5px; flex: 1; }
+.icon-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.icon-btn:hover { background: var(--s5); color: var(--ink); }
+.icon-btn svg { width: 20px; height: 20px; }
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr) minmax(200px, 32%); gap: 16px; padding: 0 24px 20px; }
+.card { background: linear-gradient(#16213F, #111A33); border: 1px solid var(--line); border-radius: 16px; padding: 16px; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 10px; font-weight: 600; flex: none; }
+.scroll { flex: 1; min-height: 0; overflow: auto; }
+#stats { grid-column: 1 / -1; }
+
+/* Lessons */
+#list { margin: 0 -8px; padding: 0 8px; }
+.day { margin-bottom: 10px; border-radius: 10px; padding: 4px; }
+.day.sel { background: var(--primary-c); }
+.day-h { color: var(--muted); font-size: 12px; padding: 2px 6px; }
+.lesson { display: flex; gap: 10px; padding: 6px; }
+.lesson .who { flex: 1; }
+.lesson .dur { color: var(--muted); font-variant-numeric: tabular-nums; }
+.add { flex: none; margin-top: 12px; padding: 10px; border-radius: 10px; background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.empty { color: var(--muted); padding: 16px 6px; }
+
+/* Calendar */
+.cal-head { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px; flex: none; }
+.cal-head h3 { margin: 0; font-size: 18px; min-width: 170px; text-align: center; }
+.cal-head button { width: 32px; height: 32px; border-radius: 50%; background: var(--s5); }
+.cal-head .pill { width: auto; padding: 0 12px; border-radius: 999px; font-size: 12px; }
+.badge { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--outline); color: var(--muted); }
+.badge.unpaid { border-color: var(--gold); color: var(--gold); }
+#grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: auto repeat(6, minmax(0, 1fr)); gap: 6px; }
+.wd { text-align: center; color: var(--muted); font-size: 12px; }
+.cell { min-height: 0; border-radius: 10px; background: var(--s2); border: 1px solid transparent; padding: 4px 8px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.cell:hover { border-color: var(--outline); }
+.cell.other { opacity: .35; }
+.cell.today .n { background: var(--primary); color: var(--on-primary); border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; }
+.cell.sel { border-color: var(--primary); }
+.cell .h { font-weight: 600; font-variant-numeric: tabular-nums; }
+.cell.has { background: color-mix(in srgb, var(--primary-c) calc(var(--load) * 100%), var(--s2)); }
+
+/* Overview */
+.kpi { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.kpi:last-child { border: 0; }
+.kpi .l { color: var(--muted); font-size: 12px; }
+.kpi .v { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .sub { color: var(--muted); font-size: 12px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gold { color: var(--gold); }
+.act { padding: 5px 12px; border-radius: 999px; font-size: 12px; background: var(--s5); }
+.act.primary { background: var(--gold); color: #3A2800; font-weight: 600; }
+.um { display: flex; justify-content: space-between; width: 100%; padding: 4px 6px; border-radius: 6px; font-size: 13px; }
+.um:hover { background: var(--s5); }
+
+/* Hidden money: a fixed row of dots, so the length doesn't hint at the amount */
+.money { display: inline-block; font-variant-numeric: tabular-nums; }
+.reveal .money { animation: fade .25s ease-out; }
+.money.hidden { color: var(--muted); letter-spacing: 2px; }
+@keyframes fade { from { opacity: 0; } }
+
+/* Stats */
+#stats .stats-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 24px; }
+.stats-grid > div { display: flex; flex-direction: column; min-height: 0; }
+.stats-grid h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; flex: none; }
+/* Charts: SVG drawn at the container's real pixel size, redrawn on resize */
+.chart { flex: 1; min-height: 0; position: relative; }
+.chart > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; }
+.chart text.val { fill: var(--ink); font-weight: 600; }
+.hit { cursor: pointer; }
+.hit .cross { opacity: 0; stroke: var(--outline); }
+.hit:hover .cross { opacity: 1; }
+.hit:hover .col { opacity: .85; }
+.donut { flex: 1; min-height: 0; display: flex; align-items: center; gap: 16px; }
+.donut svg { flex: none; }
+.donut .c1 { font-size: 18px; font-weight: 650; fill: var(--ink); }
+.donut .c2 { font-size: 11px; fill: var(--muted); }
+.leg { flex: 1; min-width: 0; font-size: 13px; }
+.leg div { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; }
+.leg i { width: 10px; height: 10px; border-radius: 3px; }
+.leg span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+#tip { position: fixed; pointer-events: none; background: var(--s5); border: 1px solid var(--outline); border-radius: 8px; padding: 6px 10px; font-size: 12px; display: none; z-index: 5; }
+
+/* Dialogs */
+dialog { background: var(--s4); color: var(--ink); border: 1px solid var(--outline); border-radius: 16px; padding: 20px; width: 320px; }
+dialog::backdrop { background: #0008; }
+dialog label { display: block; color: var(--muted); font-size: 12px; margin: 10px 0 4px; }
+dialog input, dialog select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--outline); background: var(--s2); color: var(--ink); font: inherit; }
+dialog .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+dialog .btns button { padding: 8px 14px; border-radius: 999px; }
+dialog .btns .ok { background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.proto { position: fixed; bottom: 4px; right: 12px; font-size: 11px; color: var(--muted); opacity: .6; }
+
+@media (prefers-reduced-motion: reduce) { .m-far, .m-near, .sun, .money { animation: none; } }
+</style>
+</head>
+<body>
+
+<div id="splash"><svg viewBox="20 26 72 54" aria-label="Karvo">
+  <!-- Karvo logo, from res/drawable/splash_logo_static.xml -->
+  <circle class="sun" cx="38" cy="40" r="5" fill="#E8B964"/><path class="m-far" d="M72,48 L86,76 L58,76 Z" fill="#E3F2FD"/><path class="m-near" d="M54,30 L82,76 L26,76 Z" fill="#FFFFFF"/>
+</svg></div>
+
+<header>
+  <svg viewBox="20 26 72 54" aria-hidden="true"><circle cx="38" cy="40" r="5" fill="#E8B964"/><path d="M72,48 L86,76 L58,76 Z" fill="#E3F2FD"/><path d="M54,30 L82,76 L26,76 Z" fill="#FFFFFF"/></svg>
+  <h1>Karvo</h1>
+  <button class="icon-btn" id="settings" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</header>
+
+<main>
+  <section class="card">
+    <h2 id="list-title">Lessons</h2>
+    <div class="scroll" id="list"></div>
+    <button class="add" id="add">+ Add lesson</button>
+  </section>
+
+  <section class="card">
+    <div class="cal-head">
+      <button id="prev" aria-label="Previous month">◀</button>
+      <h3 id="month"></h3>
+      <button id="next" aria-label="Next month">▶</button>
+      <button class="pill" id="today">Today</button>
+      <span class="badge" id="paid-badge"></span>
+    </div>
+    <div id="grid"></div>
+  </section>
+
+  <section class="card">
+    <h2 id="ov-title">Overview</h2>
+    <div class="scroll">
+      <div class="kpi"><div class="l">Hours</div><div class="v" id="k-hours"></div></div>
+      <div class="kpi"><div class="l">Earned</div>
+        <div class="row"><span class="v money" id="k-earned"></span>
+          <button class="icon-btn" id="eye" aria-pressed="false" aria-label="Show money" title="Show money"></button></div></div>
+      <div class="kpi"><div class="l">This month</div>
+        <div class="row"><span id="k-status"></span><button class="act" id="pay"></button></div></div>
+      <div class="kpi"><div class="l">Lessons</div><div class="v" id="k-count"></div><div class="sub" id="k-students"></div></div>
+      <div class="kpi"><div class="l">Unpaid months</div><div class="v money gold" id="k-unpaid"></div><div id="k-unpaid-list"></div></div>
+    </div>
+  </section>
+
+  <section class="card" id="stats">
+    <h2 id="st-title">Statistics</h2>
+    <div class="stats-grid">
+      <div><h4>Hours per month</h4><div class="chart" id="by-month"></div></div>
+      <div><h4>Top students</h4><div class="donut" id="by-student"></div></div>
+      <div><h4>Busiest weekdays</h4><div class="chart" id="by-weekday"></div></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="form">
+    <strong>New lesson</strong>
+    <label for="f-date">Date</label><input type="date" id="f-date" required>
+    <label for="f-student">Student</label><input id="f-student" required list="students">
+    <datalist id="students"></datalist>
+    <label for="f-dur">Duration</label>
+    <select id="f-dur"><option value="60">1 h</option><option value="90">1 h 30</option><option value="120" selected>2 h</option><option value="180">3 h</option></select>
+    <div class="btns"><button value="cancel" formnovalidate>Cancel</button><button class="ok" value="ok">Save</button></div>
+  </form>
+</dialog>
+
+<dialog id="set-dlg">
+  <form method="dialog">
+    <strong>Settings</strong>
+    <label for="f-rate">Hourly rate (€)</label><input type="number" id="f-rate" min="0" step="0.5" required>
+    <div class="btns"><button value="cancel" formnovalidate>Cancel</button><button class="ok" value="ok">Save</button></div>
+  </form>
+</dialog>
+
+<div id="tip"></div>
+<div class="proto">prototype · fake data</div>
+
+<script>
+let RATE = 3000; // cents per hour
+const SEASON_START = 11, TODAY = new Date(2026, 10, 7);
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WD = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const hrs = min => (min/60).toFixed(min % 60 ? 1 : 0) + ' h';
+const eur = cents => '€' + Math.round(cents/100).toLocaleString('en');
+const money = min => min * RATE / 60;
+const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
+const wdIdx = d => (d.getDay() + 6) % 7;
+const ym = d => iso(d).slice(0, 7);
+const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M1 1l22 22"/></svg>';
+
+// Fake data: seeded PRNG so the mockup is the same on every load. Months before Sep 2026 are paid.
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const NAMES = ['Marco','Giulia','Luca','Sofia','Matteo','Chiara','Andrea','Elena','Tommaso','Anna'];
+const lessons = []; let nextId = 1;
+for (let d = new Date(2025, 10, 22); d <= TODAY; d.setDate(d.getDate() + 1)) {
+  const peak = { 11: .6, 0: .8, 1: .85, 2: .6, 3: .3, 10: .25 }[d.getMonth()] ?? 0, weekend = wdIdx(d) >= 5 ? 1.4 : 1;
+  const n = rnd() < peak * weekend ? 1 + Math.floor(rnd() * (weekend > 1 ? 3 : 2)) : 0;
+  for (let i = 0; i < n; i++) lessons.push({ id: nextId++, date: iso(d), durationMinutes: [60, 90, 120, 120, 180][Math.floor(rnd()*5)],
+    student: NAMES[Math.floor(Math.pow(rnd(), 1.6) * NAMES.length)], paidOn: null });
+}
+// Same as Android LessonDao.markPaid / markUnpaid: paid is set for a whole month at once.
+const markPaid = month => lessons.forEach(l => { if (l.date.startsWith(month) && !l.paidOn) l.paidOn = iso(TODAY); });
+const markUnpaid = month => lessons.forEach(l => { if (l.date.startsWith(month)) l.paidOn = null; });
+['2025-11', '2025-12', '2026-01', '2026-03'].forEach(m => lessons.forEach(l => { if (l.date.startsWith(m)) l.paidOn = m + '-28'; }));
+
+let view = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), selDay = null, showMoney = false;
+const $ = id => document.getElementById(id);
+const seasonStartOf = v => new Date(v.getMonth()+1 >= SEASON_START ? v.getFullYear() : v.getFullYear()-1, SEASON_START-1, 1);
+const moneyHtml = (cents, cls = '') => `<span class="money ${cls}" data-v="${eur(cents)}">${eur(cents)}</span>`;
+
+function render() {
+  const month = ym(view), monthLessons = lessons.filter(l => l.date.startsWith(month)), mMin = sum(monthLessons);
+  $('month').textContent = view.toLocaleString('en', { month: 'long', year: 'numeric' });
+  const unpaidHere = monthLessons.filter(l => !l.paidOn);
+  $('paid-badge').hidden = !monthLessons.length;
+  $('paid-badge').className = 'badge' + (unpaidHere.length ? ' unpaid' : '');
+  $('paid-badge').textContent = unpaidHere.length ? '€ unpaid' : '✓ paid';
+
+  // Calendar
+  const g = $('grid'); g.innerHTML = WD.map(w => `<div class="wd">${w}</div>`).join('');
+  const start = new Date(view); start.setDate(1 - wdIdx(view));
+  const byDay = {}; lessons.forEach(l => (byDay[l.date] ??= []).push(l));
+  const maxDay = Math.max(1, ...Object.values(byDay).map(sum));
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const k = iso(d), min = sum(byDay[k] || []);
+    const cls = ['cell', d.getMonth() !== view.getMonth() && 'other', k === iso(TODAY) && 'today', k === selDay && 'sel', min && 'has'].filter(Boolean).join(' ');
+    g.insertAdjacentHTML('beforeend', `<button class="${cls}" data-day="${k}" style="--load:${min/maxDay}"
+      aria-label="${d.toDateString()}${min ? ', ' + hrs(min) : ''}"><span class="n">${d.getDate()}</span><span class="h">${min ? hrs(min) : ''}</span></button>`);
+  }
+
+  // Lesson list, newest first, grouped by day
+  $('list-title').textContent = 'Lessons · ' + view.toLocaleString('en', { month: 'long' });
+  const days = [...new Set(monthLessons.map(l => l.date))].sort().reverse();
+  $('list').innerHTML = days.length ? days.map(k => `<div class="day ${k === selDay ? 'sel' : ''}" id="d-${k}">
+      <div class="day-h">${parse(k).toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+      ${byDay[k].map(l => `<div class="lesson"><span class="who">${l.student}</span><span class="dur">${hrs(l.durationMinutes)}</span></div>`).join('')}
+    </div>`).join('') : '<div class="empty">No lessons this month.</div>';
+
+  // Overview
+  $('ov-title').textContent = 'Overview · ' + view.toLocaleString('en', { month: 'short', year: 'numeric' });
+  $('k-hours').textContent = hrs(mMin);
+  $('k-earned').dataset.v = eur(money(mMin));
+  $('eye').innerHTML = showMoney ? EYE_OFF : EYE;
+  $('eye').setAttribute('aria-pressed', showMoney);
+  $('eye').title = $('eye').ariaLabel = showMoney ? 'Hide money' : 'Show money';
+  const paidDate = monthLessons.map(l => l.paidOn).filter(Boolean).sort().pop();
+  $('k-status').innerHTML = !monthLessons.length ? '<span class="sub">No lessons</span>'
+    : unpaidHere.length ? `<span class="gold">Unpaid · </span>${moneyHtml(money(sum(unpaidHere)), 'gold')}`
+    : `✓ Paid ${parse(paidDate).toLocaleDateString('en', { day: 'numeric', month: 'short' })}`;
+  $('pay').hidden = !monthLessons.length;
+  $('pay').className = 'act' + (unpaidHere.length ? ' primary' : '');
+  $('pay').textContent = unpaidHere.length ? 'Mark paid' : 'Mark unpaid';
+  $('k-count').textContent = monthLessons.length;
+  $('k-students').textContent = new Set(monthLessons.map(l => l.student)).size + ' students';
+  const unpaid = lessons.filter(l => !l.paidOn), byMonth = {};
+  unpaid.forEach(l => (byMonth[l.date.slice(0, 7)] ??= []).push(l));
+  $('k-unpaid').dataset.v = eur(money(sum(unpaid)));
+  $('k-unpaid-list').innerHTML = Object.keys(byMonth).sort().map(m => `<button class="um" data-m="${m}">
+    <span>${parse(m + '-01').toLocaleDateString('en', { month: 'long', year: 'numeric' })}</span>${moneyHtml(money(sum(byMonth[m])))}</button>`).join('')
+    || '<div class="sub">All paid 🎉</div>';
+
+  // Statistics: the season the selected month belongs to
+  const s0 = seasonStartOf(view), sMonths = [...Array(12)].map((_, i) => new Date(s0.getFullYear(), s0.getMonth() + i, 1));
+  const sl = lessons.filter(l => { const d = parse(l.date); return d >= s0 && d < new Date(s0.getFullYear() + 1, s0.getMonth(), 1); });
+  $('st-title').textContent = `Statistics · season ${s0.getFullYear()}/${String(s0.getFullYear()+1).slice(2)} · ${hrs(sum(sl))}`;
+  const perMonth = sMonths.map(m => sum(sl.filter(l => l.date.startsWith(ym(m)))));
+  areaChart($('by-month'), perMonth, sMonths, month);
+  const st = {}; sl.forEach(l => st[l.student] = (st[l.student] || 0) + l.durationMinutes);
+  donut($('by-student'), Object.entries(st).sort((a, b) => b[1] - a[1]), sum(sl));
+  const wd = WD.map(() => 0); sl.forEach(l => wd[wdIdx(parse(l.date))] += l.durationMinutes);
+  columns($('by-weekday'), wd);
+
+  $('students').innerHTML = NAMES.map(n => `<option value="${n}">`).join('');
+  paintMoney();
+}
+
+// Hours per month: area + line over the season, current month marked, hover crosshair, click to open the month.
+function areaChart(el, vals, months, cur) {
+  const W = el.clientWidth, H = el.clientHeight, B = H - 18, T = 16, mx = Math.max(1, ...vals);
+  const x = i => W * (i + .5) / vals.length, y = v => B - (B - T) * v / mx;
+  const n = months.filter(m => m <= TODAY).length; // future months get a label but no point, so the line doesn't fake a drop to 0
+  const line = vals.slice(0, n).map((v, i) => `${i ? 'L' : 'M'}${x(i)},${y(v)}`).join('');
+  const ci = months.findIndex(m => ym(m) === cur);
+  el.innerHTML = `<svg><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7CC4FA" stop-opacity=".35"/><stop offset="1" stop-color="#7CC4FA" stop-opacity="0"/></linearGradient></defs>
+    <line x1="0" x2="${W}" y1="${B}" y2="${B}" stroke="var(--line)"/>
+    <path d="${line}L${x(n - 1)},${B}L${x(0)},${B}Z" fill="url(#ag)"/>
+    <path d="${line}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>
+    ${vals.map((v, i) => `<g class="hit" data-m="${ym(months[i])}" data-tip="${MONTHS[months[i].getMonth()]} ${months[i].getFullYear()}: ${hrs(v)}">
+      <rect x="${x(i) - W / vals.length / 2}" y="0" width="${W / vals.length}" height="${H}" fill="transparent"/>
+      <line class="cross" x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${B}"/>
+      ${i < n ? `<circle cx="${x(i)}" cy="${y(v)}"` : '<circle display="none"'} r="${i === ci ? 6 : 4}" fill="${i === ci ? 'var(--primary)' : 'var(--s2)'}" stroke="var(--primary)" stroke-width="2"/>
+      <text x="${x(i)}" y="${H - 2}" text-anchor="middle">${MONTHS[months[i].getMonth()]}</text></g>`).join('')}
+    ${ci >= 0 ? `<text class="val" x="${x(ci)}" y="${y(vals[ci]) - 12}" text-anchor="middle">${hrs(vals[ci])}</text>` : ''}</svg>`;
+}
+
+// Top students: donut of the top 4 plus "Other", season total in the middle, legend with hours and share.
+const CAT = ['#3D9BE9', '#BE8128', '#9B6FE0', '#1E9E7C'], OTHER = '#3A4A66'; // validated: dataviz validate_palette.js, dark
+function donut(el, pairs, total) {
+  if (!total) return el.innerHTML = '<div class="empty">No lessons this season.</div>';
+  const top = pairs.slice(0, 4).map((p, i) => [...p, CAT[i]]), rest = sum(pairs.slice(4).map(p => ({ durationMinutes: p[1] })));
+  if (rest) top.push(['Other', rest, OTHER]);
+  const S = Math.min(el.clientHeight, 150), r = S / 2 - 12, C = 2 * Math.PI * r;
+  let off = 0;
+  const arcs = top.map(([k, v, c]) => { const len = C * v / total, a = `<circle class="hit" data-tip="${k}: ${hrs(v)}" r="${r}" cx="${S/2}" cy="${S/2}" fill="none"
+      stroke="${c}" stroke-width="18" stroke-dasharray="${Math.max(len - 2, 0.5)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 ${S/2} ${S/2})"/>`; off += len; return a; });
+  el.innerHTML = `<svg width="${S}" height="${S}">${arcs.join('')}
+      <text class="c1" x="${S/2}" y="${S/2 + 2}" text-anchor="middle">${hrs(total)}</text>
+      <text class="c2" x="${S/2}" y="${S/2 + 18}" text-anchor="middle">this season</text></svg>
+    <div class="leg">${top.map(([k, v, c]) => `<div><i style="background:${c}"></i><span>${k}</span><span>${hrs(v)} · ${Math.round(v / total * 100)}%</span></div>`).join('')}</div>`;
+}
+
+// Busiest weekdays: columns rounded at the top only, the busiest day labelled directly.
+function columns(el, vals) {
+  const W = el.clientWidth, H = el.clientHeight, B = H - 18, T = 18, mx = Math.max(1, ...vals), slot = W / vals.length, w = Math.min(36, slot * .6);
+  const best = vals.indexOf(Math.max(...vals));
+  el.innerHTML = `<svg><line x1="0" x2="${W}" y1="${B}" y2="${B}" stroke="var(--line)"/>
+    ${vals.map((v, i) => { const h = (B - T) * v / mx, x0 = slot * i + (slot - w) / 2, r = Math.min(4, h, w / 2), yt = B - h;
+      return `<g class="hit" data-tip="${WD[i]}: ${hrs(v)}"><rect x="${slot * i}" y="0" width="${slot}" height="${H}" fill="transparent"/>
+        ${h ? `<path class="col" d="M${x0},${B}V${yt + r}Q${x0},${yt} ${x0 + r},${yt}H${x0 + w - r}Q${x0 + w},${yt} ${x0 + w},${yt + r}V${B}Z"
+          fill="var(--primary)" opacity="${i === best ? 1 : .55}"/>` : ''}
+        <text x="${slot * i + slot / 2}" y="${H - 2}" text-anchor="middle">${WD[i]}</text>
+        ${i === best && v ? `<text class="val" x="${slot * i + slot / 2}" y="${yt - 6}" text-anchor="middle">${hrs(v)}</text>` : ''}</g>`; }).join('')}</svg>`;
+}
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function paintMoney() {
+  document.querySelectorAll('.money').forEach(e => {
+    e.classList.toggle('hidden', !showMoney);
+    e.setAttribute('aria-label', showMoney ? e.dataset.v : 'hidden');
+    e.textContent = showMoney ? e.dataset.v : '€ ••••';
+  });
+}
+
+const goto = (y, m) => { view = new Date(y, m, 1); selDay = null; render(); };
+$('prev').onclick = () => goto(view.getFullYear(), view.getMonth() - 1);
+$('next').onclick = () => goto(view.getFullYear(), view.getMonth() + 1);
+$('today').onclick = () => { goto(TODAY.getFullYear(), TODAY.getMonth()); selDay = iso(TODAY); render(); };
+$('grid').onclick = e => { const c = e.target.closest('.cell'); if (!c) return;
+  const d = parse(c.dataset.day); selDay = c.dataset.day;
+  if (d.getMonth() !== view.getMonth()) view = new Date(d.getFullYear(), d.getMonth(), 1);
+  render(); $('d-' + selDay)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+const gotoYm = m => { const d = parse(m + '-01'); goto(d.getFullYear(), d.getMonth()); };
+$('by-month').onclick = e => { const b = e.target.closest('[data-m]'); if (b) gotoYm(b.dataset.m); };
+addEventListener('resize', render);
+$('k-unpaid-list').onclick = e => { const b = e.target.closest('.um'); if (b) gotoYm(b.dataset.m); };
+$('pay').onclick = () => { const m = ym(view);
+  lessons.some(l => l.date.startsWith(m) && !l.paidOn) ? markPaid(m) : markUnpaid(m); render(); };
+$('eye').onclick = () => { showMoney = !showMoney; document.body.classList.add('reveal'); render();
+  setTimeout(() => document.body.classList.remove('reveal'), 300); };
+$('add').onclick = () => { $('f-date').value = selDay || iso(TODAY); $('dlg').showModal(); };
+$('dlg').onclose = () => { if ($('dlg').returnValue !== 'ok') return;
+  lessons.push({ id: nextId++, date: $('f-date').value, durationMinutes: +$('f-dur').value, student: $('f-student').value.trim(), paidOn: null });
+  selDay = $('f-date').value; view = new Date(parse(selDay).getFullYear(), parse(selDay).getMonth(), 1); $('form').reset(); render(); };
+$('settings').onclick = () => { $('f-rate').value = RATE / 100; $('set-dlg').showModal(); };
+$('set-dlg').onclose = () => { if ($('set-dlg').returnValue === 'ok') { RATE = Math.round(+$('f-rate').value * 100); render(); } };
+
+// Hover tooltips for the statistics bars
+const tip = $('tip');
+document.addEventListener('mousemove', e => { const t = e.target.closest('[data-tip]');
+  if (!t) return tip.style.display = 'none';
+  tip.textContent = t.dataset.tip; tip.style.display = 'block'; tip.style.left = e.clientX + 12 + 'px'; tip.style.top = e.clientY + 12 + 'px'; });
+
+render();
+setTimeout(() => { $('splash').classList.add('out'); setTimeout(() => $('splash').remove(), 300); }, reduced ? 0 : 800);
+</script>
+</body>
+</html>
