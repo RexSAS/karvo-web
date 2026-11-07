@@ -30,7 +30,7 @@ function fakeTimers() {
 class FakeWS {
   static all = [];
   constructor(url) { this.url = url; this.sent = []; this.readyState = 0; FakeWS.all.push(this); }
-  send(d) { this.sent.push(new Uint8Array(d)); }
+  send(d) { if (this.readyState === 1) this.sent.push(new Uint8Array(d)); } // like a real socket: nothing goes out after close
   close(code = 1000) { if (this.readyState === 3) return; this.readyState = 3; this.onclose?.({ code }); }
   open() { this.readyState = 1; this.onopen?.(); }
   receive(bytes) { this.onmessage?.({ data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }); }
@@ -148,8 +148,10 @@ test('stop sends bye and does not reconnect', async () => {
   const t = await setup();
   const ch = await openAndGreet(t);
   const ws = t.ws();
-  t.conn.stop(); await flush();
+  t.conn.stop(); // no waiting: the bye must still be sent before the socket closes
+  await flush();
   assert.equal((await ch.decode(ws.sent.at(-1))).t, 'bye');
+  assert.equal(ws.readyState, 3);
   const n = FakeWS.all.length; await t.timers.tick(120000);
   assert.equal(FakeWS.all.length, n);
 });

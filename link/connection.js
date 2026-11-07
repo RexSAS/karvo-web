@@ -92,8 +92,8 @@ export function createConnection({ record, role = 'pc', relayUrl = RELAY_URL, We
     /** Retry now instead of waiting for the backoff (e.g. the tab became visible). */
     retryNow() { if (!stopped && state === 'offline' && retryTimer) { timers.clearTimeout(retryTimer); retryTimer = null; connect(); } },
     send,
-    stop() {
-      if (state === 'connected') send('bye').catch(() => {});
+    async stop() {
+      if (state === 'connected') { stopped = true; await send('bye').catch(() => {}); } // encrypt first, then close
       end('offline');
     },
   };
