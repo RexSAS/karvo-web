@@ -72,7 +72,7 @@ runSplash();
 state.source = await chooseSource();
 state.source.subscribe(snapshot => { state.snapshot = snapshot; render(); });
 addEventListener('resize', render);
-$('settings-btn').onclick = () => openSettings(state.source, state.snapshot);
+$('settings-btn').onclick = () => openSettings(state.source, () => state.snapshot);
 
 // Tooltips for anything with data-tip (chart marks).
 const tip = $('tip');

@@ -5,7 +5,8 @@ import { createSource, emptySnapshot } from './core.js';
 export async function createBackupSource(store) {
   let initial = null, loadFailed = false;
   try { initial = await store.load(); } catch { loadFailed = true; }
-  const src = createSource({ status: 'backup', canEdit: false, initial: initial ?? emptySnapshot(), store });
+  // A backup we couldn't read must never be overwritten: without a store the app works in memory only.
+  const src = createSource({ status: 'backup', canEdit: false, initial: initial ?? emptySnapshot(), store: loadFailed ? null : store });
   src.storageError = loadFailed;
   return src;
 }

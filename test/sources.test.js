@@ -68,3 +68,21 @@ test('a failing store keeps working in memory and flags the error', async () => 
   assert.equal(last(src).lessons.length, 2);
   assert.equal(src.storageError, true);
 });
+
+test('a backup that failed to load is never overwritten', async () => {
+  let saves = 0;
+  const store = { async load() { throw new Error('blocked'); }, async save() { saves++; }, async remove() { saves++; } };
+  const src = await createBackupSource(store);
+  await src.importCsv(CSV);
+  await src.setRate(3000);
+  assert.equal(saves, 0);
+  assert.equal(src.storageError, true);
+  assert.equal(last(src).lessons.length, 2);
+});
+
+test('clear without a store gives an empty snapshot, not null', async () => {
+  const { createSource, emptySnapshot } = await import('../source/core.js');
+  const src = createSource({ status: 'backup', canEdit: false, initial: { ...emptySnapshot(), rateCents: 100 } });
+  await src.clear();
+  assert.deepEqual(last(src), emptySnapshot());
+});

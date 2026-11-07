@@ -9,9 +9,11 @@ export function openStore() {
     req.onerror = () => reject(req.error);
     req.onsuccess = () => {
       const db = req.result;
+      // Settle on the transaction, not the request: a full disk only shows up as an abort at commit time.
       const run = (mode, op) => new Promise((ok, fail) => {
-        const r = op(db.transaction('snapshot', mode).objectStore('snapshot'));
-        r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error);
+        const tx = db.transaction('snapshot', mode), r = op(tx.objectStore('snapshot'));
+        tx.oncomplete = () => ok(r.result);
+        tx.onabort = tx.onerror = () => fail(tx.error ?? r.error);
       });
       let persisted = false;
       resolve({

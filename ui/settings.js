@@ -4,7 +4,8 @@ import { pickTextFile, downloadCsv } from './files.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-export function openSettings(source, snapshot) {
+export function openSettings(source, getSnapshot) {
+  const snapshot = getSnapshot();
   const d = document.createElement('dialog');
   d.innerHTML = `<form method="dialog" novalidate>
     <h3>Settings</h3>
@@ -41,10 +42,11 @@ export function openSettings(source, snapshot) {
     if (text == null) return;
     try {
       const { added, skipped } = await source.importCsv(text);
+      $('[data-export]').disabled = !getSnapshot().lessons.length;
       say(`Added ${added} lesson${added === 1 ? '' : 's'}, skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}`);
     } catch (err) { say(err.message, true); }
   };
-  $('[data-export]').onclick = () => downloadCsv(snapshot.lessons);
+  $('[data-export]').onclick = () => downloadCsv(getSnapshot().lessons); // current data, including imports made in this dialog
   $('[data-wipe]')?.addEventListener('click', async () => {
     if (!confirm('Delete all lessons stored on this PC? Your phone is not affected.')) return;
     await source.clear();

@@ -1,9 +1,9 @@
 // Add / edit / delete one lesson. Read-only sources open it with every input disabled.
-import { validateLesson } from '../domain/validate.js';
+import { validateLesson, parseDurationField } from '../domain/validate.js';
 import { esc } from './html.js';
 import { READ_ONLY_TIP } from './lessons.js';
 
-const MESSAGES = { StudentBlank: 'Enter a student', DurationZero: "Duration can't be 0", DurationTooLong: 'Max 24 hours', MinutesOver59: 'Minutes must be 0–59' };
+const MESSAGES = { StudentBlank: 'Enter a student name', DurationZero: 'Duration must be more than 0', DurationTooLong: 'Max 24 hours', MinutesOver59: 'Minutes must be 0–59' };
 
 export function openLessonDialog({ lesson = null, defaultDate, studentNames, readOnly, onSave, onDelete }) {
   const d = document.createElement('dialog');
@@ -35,7 +35,8 @@ export function openLessonDialog({ lesson = null, defaultDate, studentNames, rea
   $('form').onsubmit = e => {
     e.preventDefault();
     if (readOnly) return;
-    const student = $('#l-student').value, h = Number($('#l-h').value) || 0, m = Number($('#l-m').value) || 0, date = $('#l-date').value;
+    const student = $('#l-student').value, h = parseDurationField($('#l-h').value), m = parseDurationField($('#l-m').value), date = $('#l-date').value;
+    if (Number.isNaN(h) || Number.isNaN(m)) { err.textContent = 'Use whole numbers for hours and minutes'; return; }
     const errors = validateLesson(student, h, m);
     if (!date) { err.textContent = 'Pick a date'; return; }
     if (errors.length) { err.textContent = errors.map(x => MESSAGES[x]).join(' · '); return; }

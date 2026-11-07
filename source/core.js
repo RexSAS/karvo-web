@@ -15,8 +15,8 @@ export function createSource({ status, canEdit, initial, store = null }) {
     if (store) {
       try { await (next ? store.save(next) : store.remove()); src.storageError = false; }
       catch { src.storageError = true; }
-      if (!next) snapshot = emptySnapshot();
     }
+    if (!next) snapshot = emptySnapshot();
     subs.forEach(fn => fn(snapshot));
   }
   const edit = change => async (...args) => {
