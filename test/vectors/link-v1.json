@@ -1,0 +1,14 @@
+{
+  "secret": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "roomId": "6465666768696a6b6c6d6e6f70717273",
+  "nonce": "c8c9cacbcccdcecfd0d1d2d3",
+  "plaintext": "{\"s\":null,\"q\":0,\"t\":\"hello\"}",
+  "pcToPhone": "09c4799b070d5a64ef4b39fdfe5210355b65de7f3469f22c5df2d340287845a2",
+  "phoneToPc": "e13f83986ff354f86b8398cd4dfd921d2c8fd448f4731e702e043eaa32dd6187",
+  "authPc": "cfe999fdb9dbbfa84ec31d0d472ba54ca9bf458119c1d05013a709eda943aeb3",
+  "authPhone": "013c90ef421a70b67f465693c7f1ecc3d3ef3c3124dfca7cfc1732672fe589c2",
+  "authPcSha256": "f27f698596ab2b0b0fa82ac70bcdbca9eb037b5815b00b592d57f50f82a5c717",
+  "authPhoneSha256": "5a9d3d493f45d97206a2274df6b05dd42c0dc5ae2a7d78cfab03390910f64d40",
+  "framePcToPhone": "c8c9cacbcccdcecfd0d1d2d3b665f77ad8f887eef3c47020c00ddb56ab73a1f4635a9e9016eea7c1243cf96abc63100addc35a0630650932",
+  "framePhoneToPc": "c8c9cacbcccdcecfd0d1d2d3bf9b97ccea9123b515affb91d1cc513ddad4e696da9db3726baea41335c02bf92c9053118d4e28ec8ad48f79"
+}
