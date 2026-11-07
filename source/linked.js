@@ -52,3 +52,16 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
 
 /** Lessons the PC could restore: only when the phone has none and the backup has some. */
 export const needsRestore = (phone, backup) => phone.lessons.length === 0 ? backup?.lessons?.length ?? 0 : 0;
+
+/**
+ * The PC backup while linked. A phone with no lessons must not wipe a backup that could restore it,
+ * so empty snapshots are held back until the user answers the restore question (allowEmpty).
+ */
+export function guardedStore(inner, backupCount) {
+  let allow = backupCount === 0;
+  return {
+    inner,
+    allowEmpty() { allow = true; },
+    save: snapshot => (snapshot.lessons.length === 0 && !allow ? Promise.resolve() : inner.save(snapshot)),
+  };
+}

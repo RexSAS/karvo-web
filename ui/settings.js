@@ -1,10 +1,11 @@
 // Settings: hourly rate, season start, CSV import/export, and deleting this PC's backup.
 import { parseRateCents, formatRateText } from '../domain/rate.js';
 import { pickTextFile, downloadCsv } from './files.js';
+import { esc } from './html.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-export function openSettings(source, getSnapshot) {
+export function openSettings(source, getSnapshot, link = null) {
   const snapshot = getSnapshot();
   const d = document.createElement('dialog');
   d.innerHTML = `<form method="dialog" novalidate>
@@ -21,6 +22,10 @@ export function openSettings(source, getSnapshot) {
       <button type="button" class="btn small" data-export ${snapshot.lessons.length ? '' : 'disabled'}>Export CSV</button>
     </div>
     <div class="ok-msg" data-msg role="status"></div>
+    ${link ? `<hr><label>Phone link</label>
+    <div class="row" style="margin-top:4px">${link.paired
+      ? `<span>Linked phone: ${esc(link.peerName)}</span><button type="button" class="btn small danger" data-unlink>Unlink</button>`
+      : '<span class="sub" style="color:var(--muted)">No phone linked</span><button type="button" class="btn small primary" data-link>Link your phone</button>'}</div>` : ''}
     ${source.status === 'backup' && snapshot.lessons.length ? '<hr><button type="button" class="btn small danger" data-wipe>Delete backup from this PC</button>' : ''}
   </form>`;
   document.body.append(d);
@@ -47,6 +52,12 @@ export function openSettings(source, getSnapshot) {
     } catch (err) { say(err.message, true); }
   };
   $('[data-export]').onclick = () => downloadCsv(getSnapshot().lessons); // current data, including imports made in this dialog
+  $('[data-unlink]')?.addEventListener('click', async () => {
+    if (!confirm(`Unlink ${link.peerName}? This PC keeps its read-only backup.`)) return;
+    await link.unlink();
+    close();
+  });
+  $('[data-link]')?.addEventListener('click', () => { close(); link.linkPhone(); });
   $('[data-wipe]')?.addEventListener('click', async () => {
     if (!confirm('Delete all lessons stored on this PC? Your phone is not affected.')) return;
     await source.clear();

@@ -140,3 +140,12 @@ dialog .btns .left { margin-right: auto; }
 dialog hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0 6px; }
 
 @media (prefers-reduced-motion: reduce) { .m-far, .m-near, .sun, .reveal .money { animation: none; } #splash, #splash svg { transition: none; } }
+
+/* Link dialog: the QR stays dark-on-white so every phone camera reads it */
+.link-dialog { width: 380px; text-align: center; }
+.link-dialog .sub { color: var(--muted); font-size: 12px; }
+.link-dialog .qr { background: #fff; border-radius: 12px; padding: 8px; width: 260px; height: 260px; margin: 12px auto; display: grid; place-items: center; }
+.link-dialog .qr svg { width: 100%; height: 100%; }
+.link-dialog .qr .sub { color: #04223A; }
+.link-dialog .btns { justify-content: center; }
+.banner.ok { border-color: var(--primary); color: var(--primary); }

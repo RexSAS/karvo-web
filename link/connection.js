@@ -98,3 +98,10 @@ export function createConnection({ record, role = 'pc', relayUrl = RELAY_URL, We
     },
   };
 }
+
+/** Deletes the room on the relay (unlink, or an expired QR). Best effort: the relay may be unreachable. */
+export async function deleteRoom(record, relayUrl = RELAY_URL) {
+  const keys = await deriveKeys(fromB64url(record.secret), fromB64url(record.roomId));
+  const url = `${relayUrl.replace(/^ws/, 'http')}/room/${record.roomId}?role=pc&auth=${b64url(keys.authPc)}`;
+  try { await fetch(url, { method: 'DELETE' }); } catch {}
+}

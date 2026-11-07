@@ -1,6 +1,6 @@
 // Right column: the selected month's hours, money and payment, plus everything still unpaid.
 import { earningsCents } from '../domain/earnings.js';
-import { formatHours, monthOf, today, addMonths } from '../domain/dates.js';
+import { formatHours, monthOf, today, todayIn, addMonths } from '../domain/dates.js';
 import { paidStatus, monthPaidOn, unpaidTotals } from '../domain/paid.js';
 import { students } from '../domain/stats.js';
 import { moneyHtml } from './money.js';
@@ -13,7 +13,7 @@ const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
 
 export function renderOverview(el, { snapshot, view, showMoney, source }, actions) {
   const { lessons, rateCents } = snapshot, inMonth = lessons.filter(l => monthOf(l.date) === view);
-  const minutes = sum(inMonth), unpaid = unpaidTotals(lessons, today(), rateCents);
+  const minutes = sum(inMonth), unpaid = unpaidTotals(lessons, snapshot.timeZoneId ? todayIn(snapshot.timeZoneId) : today(), rateCents);
   const ro = source.canEdit ? '' : `disabled title="${READ_ONLY_TIP}"`;
   // The school pays a month after it ends, so the pay button sits on the month before the selected one.
   const prev = addMonths(view, -1), inPrev = lessons.filter(l => monthOf(l.date) === prev);

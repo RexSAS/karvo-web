@@ -1,4 +1,4 @@
-// Status line in the header: demo, read-only backup, or a storage problem.
+// Status line in the header: demo, linked phone, read-only backup, or a storage problem.
 import { esc } from './html.js';
 
 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
@@ -9,10 +9,26 @@ export function relativeTime(iso, now = Date.now()) {
   return 'just now';
 }
 
-export function renderBanner(el, { status, syncedAt, storageError }) {
-  let html = '';
-  if (storageError) html = `<span class="banner warn">Can't save on this PC · use Export CSV in Settings to keep your data</span>`;
-  else if (status === 'demo') html = `<span class="banner">Demo data · nothing is saved · <a href="./">Exit demo</a></span>`;
-  else if (status === 'backup' && syncedAt) html = `<span class="banner">Phone not connected · last synced ${esc(relativeTime(syncedAt))} · Read only</span>`;
-  el.innerHTML = html;
+const LINK_TEXT = {
+  replaced: 'Open in another tab · this tab is read only',
+  broken: 'Link broken · re-link this PC',
+};
+
+export function bannerText({ status, syncedAt, storageError, link }) {
+  if (storageError) return ['warn', "Can't save on this PC · use Export CSV in Settings to keep your data"];
+  if (status === 'demo') return ['', 'Demo data · nothing is saved · <a href="./">Exit demo</a>'];
+  if (status === 'linked') return ['ok', `Connected to ${esc(link?.peerName || 'your phone')}`];
+  const synced = syncedAt ? ` · last synced ${esc(relativeTime(syncedAt))}` : '';
+  if (link?.paired) {
+    if (LINK_TEXT[link.state]) return ['warn', LINK_TEXT[link.state]];
+    if (link.state === 'outdated') return ['warn', link.phoneNewer ? 'Reload this page to connect to your phone' : 'Update Karvo on your phone to connect'];
+    return ['', `Open Karvo on your phone to connect${synced}`];
+  }
+  if (status === 'backup' && syncedAt) return ['', `Phone not connected${synced} · Read only`];
+  return null;
+}
+
+export function renderBanner(el, info) {
+  const b = bannerText(info);
+  el.innerHTML = b ? `<span class="banner ${b[0]}">${b[1]}</span>` : '';
 }

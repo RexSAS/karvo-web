@@ -97,3 +97,19 @@ test('today in the phone time zone', () => {
   assert.equal(todayIn('Pacific/Honolulu', at), '2026-11-07');
   assert.equal(todayIn('Not/AZone', at).length, 10);
 });
+
+import { guardedStore } from '../source/linked.js';
+test('an empty phone snapshot never overwrites a non-empty backup until the restore question is answered', async () => {
+  const inner = fakeStore(), g = guardedStore(inner, 5);
+  await g.save({ lessons: [] });
+  assert.equal(inner.saved, null);
+  await g.save({ lessons: [L] });
+  assert.equal(inner.saved.lessons.length, 1);
+  const g2 = guardedStore(fakeStore(), 5);
+  g2.allowEmpty();
+  await g2.save({ lessons: [] });
+  assert.deepEqual(g2.inner.saved, { lessons: [] });
+  const g3 = guardedStore(fakeStore(), 0);
+  await g3.save({ lessons: [] });
+  assert.deepEqual(g3.inner.saved, { lessons: [] });
+});
