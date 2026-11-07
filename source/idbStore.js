@@ -23,6 +23,10 @@ export function openStore() {
           await run('readwrite', s => s.put(snapshot, KEY));
         },
         remove: () => run('readwrite', s => s.delete(KEY)),
+        // The phone link record { roomId, secret, peerName, linkedAt } lives next to the snapshot.
+        loadPairing: () => run('readonly', s => s.get('pairing')).then(v => v ?? null),
+        savePairing: record => run('readwrite', s => s.put(record, 'pairing')),
+        removePairing: () => run('readwrite', s => s.delete('pairing')),
       });
     };
   });
