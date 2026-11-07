@@ -9,6 +9,10 @@ import { renderBanner } from './ui/banner.js';
 import { renderEmpty } from './ui/empty.js';
 import { paintMoney } from './ui/money.js';
 import { pickTextFile } from './ui/files.js';
+import { renderCalendar } from './ui/calendar.js';
+import { renderLessons } from './ui/lessons.js';
+import { openLessonDialog } from './ui/lessonDialog.js';
+import { students } from './domain/stats.js';
 
 const $ = id => document.getElementById(id);
 const state = { source: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false };
@@ -22,6 +26,15 @@ export const actions = {
     render();
     setTimeout(() => document.body.classList.remove('reveal'), 300);
   },
+  add() {
+    openLessonDialog({ defaultDate: state.selDay ?? (state.view === monthOf(today()) ? today() : state.view + '-01'),
+      studentNames: students(state.snapshot.lessons).map(s => s.name), readOnly: false,
+      onSave: async l => { await state.source.addLesson(l); actions.selectDay(l.date); } });
+  },
+  edit(lesson) {
+    openLessonDialog({ lesson, studentNames: students(state.snapshot.lessons).map(s => s.name), readOnly: !state.source.canEdit,
+      onSave: l => state.source.updateLesson(l), onDelete: id => state.source.deleteLesson(id) });
+  },
   async importCsv() {
     const text = await pickTextFile();
     if (text == null) return null;
@@ -29,7 +42,7 @@ export const actions = {
   },
 };
 
-const panels = []; // [element id, render(el, state, actions)] — filled by the panel modules
+const panels = [['lessons', renderLessons], ['calendar', renderCalendar]]; // [element id, render(el, state, actions)]
 
 function render() {
   const { source, snapshot } = state;
