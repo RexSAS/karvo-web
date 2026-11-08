@@ -5,12 +5,19 @@ import { planImport } from '../domain/importPlan.js';
 
 export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 11, syncedAt: null });
 
-export function createSource({ status, canEdit, initial, store = null }) {
+// strict (the iPhone, where this is the only copy): a failed save rejects and keeps the previous snapshot.
+export function createSource({ status, canEdit, initial, store = null, strict = false }) {
   let snapshot = initial;
   const subs = new Set();
   const src = { status, canEdit, storageError: false };
 
   async function commit(next) {
+    if (strict && store) {
+      await (next ? store.save(next) : store.remove());
+      snapshot = next ?? emptySnapshot();
+      subs.forEach(fn => fn(snapshot));
+      return;
+    }
     snapshot = next;
     if (store) {
       try { await (next ? store.save(next) : store.remove()); src.storageError = false; }
@@ -27,6 +34,8 @@ export function createSource({ status, canEdit, initial, store = null }) {
 
   return Object.assign(src, {
     subscribe(fn) { subs.add(fn); fn(snapshot); return () => subs.delete(fn); },
+    /** Replace the whole snapshot (the phone side of the link applies PC commands this way). */
+    apply: next => commit(next),
     addLesson: edit((ls, l) => [...ls, { ...l, id: nextId(ls) }]),
     updateLesson: edit((ls, l) => ls.map(x => x.id === l.id ? l : x)),
     deleteLesson: edit((ls, id) => ls.filter(x => x.id !== id)),
