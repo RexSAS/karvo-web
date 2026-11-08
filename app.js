@@ -3,6 +3,7 @@
 import { createDemoSource } from './source/demo.js';
 import { createBackupSource } from './source/backup.js';
 import { createLinkedSource, needsRestore, guardedStore } from './source/linked.js';
+import { loadBackups, saveBackup, needsSyncBackup } from './source/pcBackups.js';
 import { openStore } from './source/idbStore.js';
 import { emptySnapshot, createSource } from './source/core.js';
 import { createConnection, deleteRoom, RELAY_URL } from './link/connection.js';
@@ -108,7 +109,16 @@ function startLink(record, existing = null) {
   state.link = { paired: true, state: existing?.state ?? 'offline', peerName: record.peerName, phoneNewer: false };
   const conn = state.conn = existing ?? createConnection({ record, relayUrl: RELAY, appVersion: APP_VERSION, myName: pcName(navigator.userAgent) });
   const backupSnap = state.snapshot;
-  const store = guardedStore(state.store ?? { save: async () => {} }, backupSnap.lessons.length);
+  // Before the first phone sync of each day, the PC keeps its previous copy as a backup (up to 3, like Android).
+  const base = state.store ?? { save: async () => {} };
+  const withDailyBackup = { save: async snap => {
+    if (state.store) {
+      const current = await state.store.load().catch(() => null);
+      if (current && needsSyncBackup(await loadBackups(state.store), current)) await saveBackup(state.store, current, 'sync').catch(() => {});
+    }
+    return base.save(snap);
+  } };
+  const store = guardedStore(withDailyBackup, backupSnap.lessons.length);
   const linked = createLinkedSource(conn, store, { peerName: record.peerName });
   let asked = false, declined = false;
 
@@ -162,7 +172,8 @@ if (await boot() !== 'phone') startPcUi();
 function startPcUi() {
 addEventListener('resize', render);
 $('settings-btn').onclick = () => openSettings(state.source, () => state.snapshot,
-  params.has('demo') ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone });
+  params.has('demo') ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone },
+  params.has('demo') || !state.store ? null : { store: state.store, canRestore: state.source.status === 'backup' });
 
 // Tooltips for anything with data-tip (chart marks).
 const tip = $('tip');
