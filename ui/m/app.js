@@ -7,6 +7,8 @@ import { lessonsToCsv, csvFileBytes, csvFileName } from '../../domain/csv.js';
 import { today } from '../../domain/dates.js';
 import { esc } from '../html.js';
 import { renderLessons, openLessonSheet, openEventSheet } from './lessons.js';
+import { renderCalendar } from './calendar.js';
+import { today as todayDate, monthOf } from '../../domain/dates.js';
 import { eventsOn } from '../../domain/events.js';
 import { renderOverview } from './overview.js';
 import { renderSettings, APP_VERSION } from './settings.js';
@@ -17,6 +19,8 @@ import { t, setLang } from './i18n.js';
 import { runSplash } from '../splash.js';
 
 const ICONS = {
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
   lessons: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
   overview: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
@@ -57,7 +61,10 @@ async function saveMeta(next) {
 }
 
 export const actions = {
-  setTab(tab) { state.tab = tab; state.flash = null; render(); },
+  setTab(tab) { state.tab = tab; state.cal = null; state.flash = null; render(); },
+  /** Opens (or moves) the calendar on the Lessons tab; null closes it. */
+  setCal(cal) { state.cal = cal; render(); },
+  openCalendar() { const d = todayDate(); actions.setCal({ month: monthOf(d), day: d }); },
   /** A result line in Settings that survives the redraw the change itself causes. */
   flash(text, err = false) { state.flash = { text, err }; render(); },
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
@@ -69,9 +76,9 @@ export const actions = {
     openLessonSheet({ lesson, names: students(state.snapshot.lessons).map(s => s.name),
       onSave: l => state.source.updateLesson(l), onDelete: id => state.source.deleteLesson(id) });
   },
-  editEvent(id) {
+  editEvent(id, date) {
     const event = id == null ? null : state.snapshot.events.find(e => e.id === id);
-    openEventSheet({ event, onSave: v => event ? state.source.updateEvent({ ...event, ...v }) : state.source.addEvent(v),
+    openEventSheet({ event, date, onSave: v => event ? state.source.updateEvent({ ...event, ...v }) : state.source.addEvent(v),
       onDelete: eid => state.source.deleteEvent(eid) });
   },
   /** CSV through the Share sheet; only a completed share counts as a backup. */
@@ -118,7 +125,10 @@ function render({ keepFocus = false } = {}) {
   const r = reminderState(state.meta, new Date(), state.snapshot.lessons.length > 0);
   const screen = document.querySelector('.m-screen');
   const titles = { lessons: t('lessons'), overview: t('overview'), settings: t('settings') };
-  screen.querySelector('.m-head h1').textContent = titles[state.tab];
+  const cal = state.tab === 'lessons' && state.cal;
+  screen.querySelector('.m-head h1').textContent = cal ? t('calendar') : titles[state.tab];
+  screen.querySelector('[data-back]').hidden = !cal;
+  screen.querySelector('[data-cal]').hidden = state.tab !== 'lessons' || !!cal;
   const banner = screen.querySelector('.m-banner-slot');
   const todays = eventsOn(state.snapshot.events, today()).map(e => e.text).join(' · ');
   banner.innerHTML = (todays ? `<div class="m-banner m-today" role="status"><span>${esc(t('eventToday', todays))}</span></div>` : '') + (r.level === 'banner'
@@ -127,12 +137,12 @@ function render({ keepFocus = false } = {}) {
   const view = screen.querySelector('.m-view');
   const focused = keepFocus && document.activeElement?.classList.contains('m-search') ? document.activeElement.selectionStart : null;
   const scroll = view.scrollTop;
-  ({ lessons: renderLessons, overview: renderOverview, settings: renderSettings })[state.tab](view, state, actions);
+  (cal ? renderCalendar : { lessons: renderLessons, overview: renderOverview, settings: renderSettings }[state.tab])(view, state, actions);
   view.scrollTop = scroll;
   if (focused != null) { const s = view.querySelector('.m-search'); s.focus(); s.setSelectionRange(focused, focused); }
   screen.querySelectorAll('.m-tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === state.tab ? 'page' : 'false'));
   screen.querySelectorAll('.m-tabs button span').forEach(s => { s.textContent = titles[s.parentElement.dataset.tab]; });
-  screen.querySelector('.m-fab').hidden = state.tab !== 'lessons';
+  screen.querySelector('.m-fab').hidden = state.tab !== 'lessons' || !!cal;
   document.querySelector('.m-backdrop')?.setAttribute('data-tab', state.tab);
   renderBlocking(r);
 }
@@ -152,13 +162,16 @@ export async function startIphone() {
   document.querySelectorAll('header, main#app, section#empty, #banner').forEach(e => e.remove());
   const screen = document.createElement('div');
   screen.className = 'm-screen';
-  screen.innerHTML = `<div class="m-head"><h1></h1></div><div class="m-banner-slot"></div><div class="m-view"></div>
+  screen.innerHTML = `<div class="m-head"><button class="m-icon" data-back aria-label="${esc(t('close'))}" hidden>${ICONS.back}</button><h1></h1>
+    <button class="m-icon" data-cal aria-label="${esc(t('calendar'))}">${ICONS.calendar}</button></div><div class="m-banner-slot"></div><div class="m-view"></div>
     <button class="m-fab" aria-label="${esc(t('addLesson'))}">+</button>
     <nav class="m-tabs">${['lessons', 'overview', 'settings'].map(k => `<button data-tab="${k}">${ICONS[k]}<span></span></button>`).join('')}</nav>`;
   document.body.prepend(screen);
   screen.before(backdrop());
   runSplash();
   screen.querySelector('.m-fab').onclick = actions.add;
+  screen.querySelector('[data-cal]').onclick = () => actions.openCalendar();
+  screen.querySelector('[data-back]').onclick = () => actions.setCal(null);
   screen.querySelector('.m-tabs').onclick = e => { const b = e.target.closest('button'); if (b) actions.setTab(b.dataset.tab); };
   state.source.subscribe(s => { state.snapshot = s; render(); });
   // Once per version: welcome (fresh app) or What's new (after an update), then the version is remembered.

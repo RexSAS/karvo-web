@@ -310,3 +310,29 @@ body.m { overflow: hidden; background: #0C1530; }
 .m-tour .tip p { margin: 0; color: var(--ink); line-height: 1.45; }
 .m-tour .btns, .m-start .btns { display: flex; gap: 8px; margin-top: 14px; }
 .m-tour .btns .btn, .m-start .btns .btn { flex: 1; min-height: 44px; }
+
+/* iPhone calendar */
+.m-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); flex: none; }
+.m-icon svg { width: 24px; height: 24px; }
+.m-icon[hidden] { display: none; }
+.m-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.m-cal-head strong { font-size: 16px; text-transform: capitalize; }
+.m-cal-nav { width: 44px; height: 44px; border-radius: 50%; background: var(--s5); font-size: 22px; }
+.m-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.m-cal-grid .wd { color: var(--muted); font-size: 12px; padding: 4px 0; }
+.m-cal-day { min-height: 44px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-variant-numeric: tabular-nums; }
+.m-cal-day.other { color: var(--muted); opacity: .45; }
+.m-cal-day.today span { color: var(--gold); font-weight: 700; }
+.m-cal-day.sel { background: var(--primary); color: var(--on-primary); }
+.m-cal-day.sel span { color: inherit; }
+.m-cal-day i { display: flex; gap: 3px; height: 5px; }
+.m-cal-day b { width: 5px; height: 5px; border-radius: 50%; }
+.m-cal-day b.ev { background: var(--gold); }
+.m-cal-day b.ls { background: var(--primary); }
+.m-cal-day.sel b { background: var(--on-primary); }
+.m-events-head h2::first-letter { text-transform: uppercase; }
+.m-event-row.one { grid-template-columns: 1fr; }
+.m-cal-sub { margin: 14px 0 4px !important; }
+.m-cal-lesson { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.m-cal-lesson:first-of-type { border-top: 0; }
+[data-dayview] { animation: up .3s cubic-bezier(.2, .8, .2, 1) both; }

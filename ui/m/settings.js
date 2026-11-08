@@ -6,7 +6,7 @@ import { pickTextFile } from '../files.js';
 import { esc } from '../html.js';
 import { t, getLang, locale } from './i18n.js';
 
-export const APP_VERSION = 'web-4';
+export const APP_VERSION = 'web-5';
 const PRIVACY_URL = 'https://github.com/RexSAS/Karvo/blob/main/PRIVACY.md';
 
 export function renderSettings(view, state, actions) {

@@ -71,9 +71,9 @@ export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
 }
 
 /** Add (event = null) or edit one event. */
-export function openEventSheet({ event = null, onSave, onDelete }) {
+export function openEventSheet({ event = null, date = today(), onSave, onDelete }) {
   const s = openSheet(`<form novalidate><h3>${esc(t(event ? 'editEvent' : 'newEvent'))}</h3>
-    <label for="me-date">${esc(t('date'))}</label><input type="date" id="me-date" value="${esc(event?.date ?? today())}">
+    <label for="me-date">${esc(t('date'))}</label><input type="date" id="me-date" value="${esc(event?.date ?? date)}">
     <label for="me-text">${esc(t('event'))}</label><textarea id="me-text" rows="3" maxlength="${MAX_EVENT}" placeholder="${esc(t('eventPlaceholder'))}">${esc(event?.text ?? '')}</textarea>
     <p class="m-note">${esc(t('eventHint'))}</p>
     <div class="err" role="alert"></div>
