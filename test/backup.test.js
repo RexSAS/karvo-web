@@ -27,7 +27,14 @@ test('Remind me tomorrow works once in a row', () => {
   assert.equal(reminderState(recordBackup(s, at(7.3)), at(13), true).canSnooze, true);
 });
 
-test('a clock moved back never gives negative days', () => {
+test('a clock moved back never gives negative days (a backup stamped in the future is ignored)', () => {
   const m = recordBackup(meta, at(10));
-  assert.deepEqual(reminderState(m, at(4), true), { level: 'none', days: 0, canSnooze: true });
+  const r = reminderState(m, at(4), true);
+  assert.ok(r.days >= 0);
+  assert.equal(r.days, 4); // counted from install, the last time that is certainly in the past
+});
+
+test('a timestamp from a clock that was ahead does not silence reminders', () => {
+  const m = recordBackup(meta, at(30)); // saved while the clock said +30 days
+  assert.equal(reminderState(m, at(20), true).level, 'blocking'); // clock fixed, real last backup unknown → counts from install
 });

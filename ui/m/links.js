@@ -53,6 +53,7 @@ async function pair(text) {
   if (!ok) return;
   const pairing = { roomId: b64url(qr.roomId), secret: b64url(qr.secret), pcName: qr.name, linkedAt: new Date().toISOString() };
   ctx.actions.flash(t('linking'));
+  ctx.links.get(pairing.roomId)?.dispose(); // the same code scanned twice: never leave the old link running untracked
   const link = makeLink(pairing);
   ctx.links.set(pairing.roomId, link);
   const result = await new Promise(resolve => {

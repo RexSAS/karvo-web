@@ -19,7 +19,13 @@ export function phoneRoute(ua, standalone) {
 /** Replaces the page with the phone screen; returns true when it did (the caller then stops booting the PC app). */
 export function showPhoneScreen(route = phoneRoute(navigator.userAgent, navigator.standalone === true)) {
   if (!route) return false;
-  if (route === 'iphone') { import('./m/app.js').then(m => m.startIphone()); return true; }
+  if (route === 'iphone') {
+    import('./m/app.js').then(m => m.startIphone()).catch(() => {
+      document.getElementById('splash')?.remove();
+      document.body.innerHTML = '<section class="phone-page"><h1>Karvo</h1><p>Karvo couldn’t start. Check the connection and open it again.</p></section>';
+    });
+    return true;
+  }
   document.getElementById('splash')?.remove();
   const page = document.createElement('section');
   page.className = 'phone-page';

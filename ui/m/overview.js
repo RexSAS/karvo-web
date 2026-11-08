@@ -45,9 +45,10 @@ export function renderOverview(view, state, actions) {
     <div class="m-card"><h2>${esc(t('busiestWeekdays'))}</h2><div class="m-chart" data-c="wd"></div></div>` : ''}`;
   view.querySelectorAll('[data-shift]').forEach(b => b.onclick = () => { seasonShift = Math.min(0, seasonShift + Number(b.dataset.shift)); actions.render(); });
   view.querySelector('[data-eye]').onclick = actions.toggleMoney;
-  view.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => askPaidDate(b.dataset.pay, d => state.source.markPaid(b.dataset.pay, d)));
+  const failed = () => alert(t('saveFailed'));
+  view.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => askPaidDate(b.dataset.pay, d => state.source.markPaid(b.dataset.pay, d).catch(failed)));
   view.querySelectorAll('[data-unpay]').forEach(b => b.onclick = () => {
-    if (confirm(t('markUnpaidConfirm', monthName(b.dataset.unpay)))) state.source.markUnpaid(b.dataset.unpay);
+    if (confirm(t('markUnpaidConfirm', monthName(b.dataset.unpay)))) state.source.markUnpaid(b.dataset.unpay).catch(failed);
   });
   if (s.lessonCount) {
     const cur = monthOf(today());

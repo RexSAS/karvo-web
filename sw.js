@@ -1,7 +1,7 @@
 // Offline cache for the iPhone app (and the PC site): every shipped file is cached on install, then served from the
 // cache while a fresh copy is fetched in the background, so a new release shows on the next launch.
 // FILES and VERSION are rewritten by `node tools/update-sw.mjs` (test/sw.test.js checks the list).
-const VERSION = 8;
+const VERSION = 10;
 const FILES = [
   './',
   'app.js',
@@ -59,7 +59,7 @@ const FILES = [
 const CACHE = `karvo-v${VERSION}`;
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -72,7 +72,7 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // the relay and Play links go to the network
   e.respondWith(caches.open(CACHE).then(async cache => {
     const hit = await cache.match(e.request, { ignoreSearch: true });
-    const fresh = fetch(e.request).then(r => { if (r.ok) cache.put(e.request, r.clone()); return r; }).catch(() => hit);
+    const fresh = fetch(e.request, { cache: 'no-cache' }).then(r => { if (r.ok) cache.put(e.request, r.clone()); return r; }).catch(() => hit);
     return hit ?? fresh;
   }));
 });

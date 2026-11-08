@@ -4,7 +4,8 @@ const BANNER_DAYS = 2, BLOCKING_DAYS = 5;
 
 /** { level: 'none' | 'banner' | 'blocking', days, canSnooze } */
 export function reminderState(meta, now = new Date(), hasLessons = true) {
-  const times = [meta.lastBackupAt, meta.lastPcSyncAt, meta.startedAt].filter(Boolean).map(Date.parse);
+  // A time later than now came from a clock that was ahead: ignore it, or reminders would stay silent until that date.
+  const times = [meta.lastBackupAt, meta.lastPcSyncAt, meta.startedAt].filter(Boolean).map(Date.parse).filter(x => x <= now);
   const last = times.length ? Math.max(...times) : now.getTime();
   const days = Math.max(0, Math.floor((now - last) / DAY)); // a clock moved back counts as "just now"
   const canSnooze = !meta.snoozedOnce;

@@ -70,22 +70,29 @@ function renderBlocking(r) {
   let el = document.querySelector('.m-full.m-backup');
   if (r.level !== 'blocking') { el?.remove(); return; }
   if (!el) { el = document.createElement('div'); el.className = 'm-full m-backup'; document.body.append(el); }
-  el.innerHTML = `<h2>${esc(t('backupNeededTitle'))}</h2><p>${esc(t('lastBackup', r.days))}</p><p>${esc(t('backupNeededBody'))}</p>
+  el.innerHTML = `<h2>${esc(t('backupNeededTitle'))}</h2><p>${esc(backupLine(r))}</p><p>${esc(t('backupNeededBody'))}</p>
     <button class="btn primary" data-backup>${esc(t('backupNow'))}</button>
     ${r.canSnooze ? `<button class="btn" data-snooze>${esc(t('remindTomorrow'))}</button>` : ''}`;
   el.querySelector('[data-backup]').onclick = () => actions.backupNow();
   el.querySelector('[data-snooze]')?.addEventListener('click', () => actions.snooze());
 }
 
+const neverBackedUp = () => !state.meta.lastBackupAt && !state.meta.lastPcSyncAt;
+export const backupLine = r => t(neverBackedUp() ? 'noBackupDays' : 'lastBackup', r.days);
+
 function render({ keepFocus = false } = {}) {
   if (!state.snapshot) return;
+  // Count from the first lesson, not from install: an empty app keeps its start date fresh.
+  if (!state.snapshot.lessons.length && Date.now() - Date.parse(state.meta.startedAt ?? 0) > 36e5) {
+    saveMeta({ ...state.meta, startedAt: new Date().toISOString() }); return;
+  }
   const r = reminderState(state.meta, new Date(), state.snapshot.lessons.length > 0);
   const screen = document.querySelector('.m-screen');
   const titles = { lessons: t('lessons'), overview: t('overview'), settings: t('settings') };
   screen.querySelector('.m-head h1').textContent = titles[state.tab];
   const banner = screen.querySelector('.m-banner-slot');
   banner.innerHTML = r.level === 'banner'
-    ? `<div class="m-banner" role="status"><span>${esc(t('lastBackup', r.days))}</span><button data-backup>${esc(t('backupNow'))}</button></div>` : '';
+    ? `<div class="m-banner" role="status"><span>${esc(backupLine(r))}</span><button data-backup>${esc(t('backupNow'))}</button></div>` : '';
   banner.querySelector('[data-backup]')?.addEventListener('click', () => actions.backupNow());
   const view = screen.querySelector('.m-view');
   const focused = keepFocus && document.activeElement?.classList.contains('m-search') ? document.activeElement.selectionStart : null;
@@ -104,7 +111,7 @@ export async function startIphone() {
   try {
     state.store = await openStore();
     state.meta = (await state.store.loadKey('meta')) ?? { startedAt: new Date().toISOString(), lang: (navigator.language || '').startsWith('it') ? 'it' : 'en' };
-    await state.store.saveKey('meta', state.meta);
+    await state.store.saveKey('meta', state.meta).catch(() => {}); // a full iPhone must still open (and offer Back up now)
     state.source = await createLocalSource(state.store);
   } catch { return fatal(t('cantSave')); }
   setLang(state.meta.lang);

@@ -170,7 +170,7 @@ body.m { overflow: hidden; }
 .m-tabs button[aria-current="page"] { color: var(--primary); }
 .m-fab { position: fixed; right: 20px; bottom: calc(76px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border-radius: 18px;
   background: var(--primary); color: var(--on-primary); font-size: 30px; line-height: 1; box-shadow: 0 6px 20px #0008; z-index: 2; }
-.m-search { width: 100%; min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--s2); color: var(--ink); font: inherit; margin-bottom: 8px; }
+.m-search { width: 100%; min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--s2); color: var(--ink); font: inherit; font-size: 16px; margin-bottom: 8px; }
 .m-month { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .8px;
   text-transform: uppercase; padding: 18px 4px 6px; }
 .m-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; width: 100%; text-align: left; padding: 12px; min-height: 56px;

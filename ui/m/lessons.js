@@ -53,7 +53,7 @@ export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
     const student = $('#ml-student').value, h = parseDurationField($('#ml-h').value), m = parseDurationField($('#ml-m').value), date = $('#ml-date').value;
     if (Number.isNaN(h) || Number.isNaN(m)) { err.textContent = t('useWholeNumbers'); return; }
     const errors = validateLesson(student, h, m);
-    if (!date) { err.textContent = t('date'); return; }
+    if (!date) { err.textContent = t('pickDate'); return; }
     if (errors.length) { err.textContent = errors.map(x => t(x)).join(' · '); return; }
     run(() => onSave({ ...(lesson ?? { paidOn: null }), date, student: student.trim(), durationMinutes: h * 60 + m, notes: $('#ml-notes').value.trim() || null }));
   };

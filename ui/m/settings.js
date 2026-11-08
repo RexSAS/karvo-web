@@ -37,9 +37,9 @@ export function renderSettings(view, state, actions) {
   $('#ms-rate').onchange = async e => {
     const p = parseRateCents(e.target.value);
     $('[data-rate-err]').textContent = p.invalid ? t('invalidRate') : '';
-    if (!p.invalid && p.cents !== rateCents) await state.source.setRate(p.cents);
+    if (!p.invalid && p.cents !== rateCents) await state.source.setRate(p.cents).catch(() => actions.flash(t('saveFailed'), true));
   };
-  $('#ms-season').onchange = e => state.source.setSeasonStart(Number(e.target.value));
+  $('#ms-season').onchange = e => state.source.setSeasonStart(Number(e.target.value)).catch(() => actions.flash(t('saveFailed'), true));
   $('#ms-lang').onchange = e => actions.setLang(e.target.value);
   $('[data-backup]').onclick = async () => { if (await actions.backupNow()) actions.flash(t('backupDone')); };
   $('[data-import]').onclick = async () => {

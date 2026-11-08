@@ -110,3 +110,33 @@ test('the first snapshot goes out even though the connection announces the PC be
   assert.equal(c.sent.filter(m => m.t === 'snapshot').length, 1);
   assert.equal(syncs, 1);
 });
+
+const slowStore = () => ({ async load() { return null; }, async save() { await new Promise(r => setTimeout(r, 20)); }, async remove() {} });
+
+test('two PCs and the iPhone changing data at the same moment lose nothing', async () => {
+  const source = createSource({ status: 'phone', canEdit: true, initial: data(), store: slowStore(), strict: true });
+  const a = fakeConnection(), b = fakeConnection();
+  createPhoneLink({ pairing: { roomId: 'a', secret: 's', pcName: 'A' }, source, text, connect: () => a });
+  createPhoneLink({ pairing: { roomId: 'b', secret: 's', pcName: 'B' }, source, text, connect: () => b });
+  for (const c of [a, b]) c.emit('state', 'connected');
+  a.emit('message', { t: 'command', id: 1, op: 'addLesson', args: { lesson: lesson({ student: 'FromA' }) } });
+  b.emit('message', { t: 'command', id: 1, op: 'addLesson', args: { lesson: lesson({ student: 'FromB' }) } });
+  const ui = source.addLesson(lesson({ student: 'OnPhone' }));
+  await ui; await new Promise(r => setTimeout(r, 150));
+  let now; source.subscribe(s => { now = s; })();
+  assert.deepEqual(now.lessons.map(l => l.student).sort(), ['Anna', 'FromA', 'FromB', 'OnPhone']);
+  assert.equal(new Set(now.lessons.map(l => l.id)).size, 4);
+});
+
+test('restore checks the latest data, not a stale copy', async () => {
+  const source = createSource({ status: 'phone', canEdit: true, initial: data([]), store: slowStore(), strict: true });
+  const a = fakeConnection();
+  createPhoneLink({ pairing: { roomId: 'a', secret: 's', pcName: 'A' }, source, text, connect: () => a });
+  a.emit('state', 'connected');
+  const ui = source.addLesson(lesson({ student: 'Typed now' }));
+  a.emit('message', { t: 'command', id: 9, op: 'restoreAll', args: { lessons: [lesson()] } });
+  await ui; await new Promise(r => setTimeout(r, 120));
+  assert.equal(a.sent.find(m => m.t === 'ack' && m.id === 9).ok, false);
+  let now; source.subscribe(s => { now = s; })();
+  assert.deepEqual(now.lessons.map(l => l.student), ['Typed now']);
+});

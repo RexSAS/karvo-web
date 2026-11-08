@@ -94,8 +94,8 @@ export function createPhoneLink({ pairing, source, text, onPcSync = () => {}, re
     queue = queue.then(async () => {
       let ack;
       try {
-        const { data: next, result } = applyCommand(data, msg.op, msg.args, text);
-        await source.apply(next);
+        let result;
+        await source.apply(latest => { const r = applyCommand(latest, msg.op, msg.args, text); result = r.result; return r.data; });
         ack = { id: msg.id, ok: true, ...(result ? { result } : {}) };
       } catch (e) {
         ack = { id: msg.id, ok: false, error: e instanceof Refused ? e.message : text('saveFailed') };
