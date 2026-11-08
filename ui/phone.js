@@ -10,25 +10,34 @@ export function phoneKind(ua) {
 
 const logo = `<svg viewBox="20 26 72 54" width="96" aria-hidden="true"><circle cx="38" cy="40" r="5" fill="#E8B964"/><path d="M72,48 L86,76 L58,76 Z" fill="#E3F2FD"/><path d="M54,30 L82,76 L26,76 Z" fill="#FFFFFF"/></svg>`;
 
+/** 'iphone' (Home Screen app) | 'install' (iPhone in Safari) | 'android' | null. */
+export function phoneRoute(ua, standalone) {
+  const kind = phoneKind(ua);
+  return kind === 'ios' ? (standalone ? 'iphone' : 'install') : kind;
+}
+
 /** Replaces the page with the phone screen; returns true when it did (the caller then stops booting the PC app). */
-export function showPhoneScreen(kind = phoneKind(navigator.userAgent)) {
-  if (!kind) return false;
+export function showPhoneScreen(route = phoneRoute(navigator.userAgent, navigator.standalone === true)) {
+  if (!route) return false;
+  if (route === 'iphone') { import('./m/app.js').then(m => m.startIphone()); return true; }
   document.getElementById('splash')?.remove();
   const page = document.createElement('section');
   page.className = 'phone-page';
   document.body.replaceChildren(page);
-  if (kind === 'android') {
+  if (route === 'android') {
     page.innerHTML = `${logo}<h1>Karvo for Android</h1>
       <p>On Android, Karvo is an app. Get it from Google Play, then use this site on your PC.</p>
       <a class="btn primary" href="${PLAY_URL}">Get it on Google Play</a>`;
     return true;
   }
-  const soon = () => { page.innerHTML = `${logo}<h1>Karvo for iPhone</h1><p>The iPhone web app will be available soon.</p>`; };
-  if (navigator.standalone) { soon(); return true; } // already opened from the Home Screen
-  page.innerHTML = `${logo}<h1>Add Karvo to your Home Screen</h1>
+  // Karvo runs only from the Home Screen: there iOS keeps its storage, in a Safari tab it may be cleared.
+  const it = (navigator.language || '').startsWith('it');
+  page.innerHTML = it
+    ? `${logo}<h1>Aggiungi Karvo alla schermata Home</h1>
+    <p>Le tue lezioni vengono salvate su questo iPhone. Per non perderle, aggiungi Karvo alla schermata Home:
+    tocca <b>Condividi</b> <span aria-hidden="true">⬆︎</span>, poi <b>Aggiungi alla schermata Home</b>, e apri Karvo sempre da lì.</p>`
+    : `${logo}<h1>Add Karvo to your Home Screen</h1>
     <p>Your lessons will be saved on this iPhone. To not lose them, add Karvo to your Home Screen:
-    tap <b>Share</b> <span aria-hidden="true">⬆︎</span>, then <b>Add to Home Screen</b>, and always open Karvo from there.</p>
-    <button class="btn primary" type="button">OK</button>`;
-  page.querySelector('button').onclick = soon;
+    tap <b>Share</b> <span aria-hidden="true">⬆︎</span>, then <b>Add to Home Screen</b>, and always open Karvo from there.</p>`;
   return true;
 }
