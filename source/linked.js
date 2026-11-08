@@ -12,8 +12,8 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
   connection.on('peer', p => { src.peerName = p.name; });
   connection.on('message', async msg => {
     if (msg.t === 'snapshot') {
-      const { lessons, rateCents, seasonStartMonth, timeZoneId } = msg;
-      snapshot = { lessons, rateCents, seasonStartMonth, timeZoneId, syncedAt: new Date().toISOString() };
+      const { lessons, rateCents, seasonStartMonth, timeZoneId, dayNotes = {} } = msg; // a 3.1 phone sends no notes
+      snapshot = { lessons, rateCents, seasonStartMonth, timeZoneId, dayNotes, syncedAt: new Date().toISOString() };
       subs.forEach(fn => fn(snapshot));
       try { await store?.save(snapshot); src.storageError = false; } catch { src.storageError = true; }
     } else if (msg.t === 'ack') {
@@ -48,6 +48,7 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
     markUnpaid: month => command('markUnpaid', { month }),
     setRate: rateCents => command('setRate', { rateCents }),
     setSeasonStart: month => command('setSeasonStart', { month }),
+    setDayNote: (date, text) => command('setDayNote', { date, text: text?.trim() || null }),
     importCsv: async text => command('importLessons', { lessons: parseLessonsCsv(text) }),
     restoreAll: lessons => command('restoreAll', { lessons }),
   });

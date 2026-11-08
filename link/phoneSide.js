@@ -4,6 +4,7 @@ import { markPaid, markUnpaid } from '../domain/paid.js';
 import { planImport } from '../domain/importPlan.js';
 import { validateLesson, MAX_DURATION_MINUTES } from '../domain/validate.js';
 import { createConnection, deleteRoom, RELAY_URL } from './connection.js';
+import { setNote, MAX_NOTE } from '../domain/notes.js';
 
 export class Refused extends Error {}
 
@@ -61,11 +62,15 @@ export function applyCommand(data, op, args, text) {
       if (lessons.length) throw new Refused(text('phoneNotEmpty'));
       return { data: { ...data, lessons: withIds([], incoming) } };
     }
+    case 'setDayNote':
+      if (!isDate(a.date) || (a.text !== null && typeof a.text !== 'string') || (a.text ?? '').trim().length > MAX_NOTE)
+        throw new Refused(text('invalidData'));
+      return { data: { ...data, dayNotes: setNote(data.dayNotes, a.date, a.text) } };
     default: throw new Refused(text('unknownCommand'));
   }
 }
 
-const snapshotOf = d => ({ lessons: d.lessons, rateCents: d.rateCents, seasonStartMonth: d.seasonStartMonth,
+const snapshotOf = d => ({ lessons: d.lessons, rateCents: d.rateCents, seasonStartMonth: d.seasonStartMonth, dayNotes: d.dayNotes ?? {},
   timeZoneId: d.timeZoneId ?? Intl.DateTimeFormat().resolvedOptions().timeZone });
 
 /**

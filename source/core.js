@@ -2,8 +2,9 @@
 import { markPaid, markUnpaid } from '../domain/paid.js';
 import { parseLessonsCsv } from '../domain/csv.js';
 import { planImport } from '../domain/importPlan.js';
+import { setNote } from '../domain/notes.js';
 
-export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 11, syncedAt: null });
+export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 11, syncedAt: null, dayNotes: {} });
 
 // strict (the iPhone, where this is the only copy): a failed save rejects and keeps the previous snapshot.
 export function createSource({ status, canEdit, initial, store = null, strict = false }) {
@@ -46,6 +47,10 @@ export function createSource({ status, canEdit, initial, store = null, strict = 
     markPaid: edit((ls, month, paidOn) => markPaid(ls, month, paidOn)),
     markUnpaid: edit((ls, month) => markUnpaid(ls, month)),
     setRate: rateCents => serial(() => commit({ ...snapshot, rateCents })),
+    async setDayNote(date, text) {
+      if (!canEdit) throw new Error('read-only');
+      return serial(() => commit({ ...snapshot, dayNotes: setNote(snapshot.dayNotes, date, text) }));
+    },
     setSeasonStart: seasonStartMonth => serial(() => commit({ ...snapshot, seasonStartMonth })),
     async importCsv(text) {
       const incoming = parseLessonsCsv(text);
