@@ -31,9 +31,9 @@ export function renderSettings(view, state, actions) {
       <div class="${state.flash?.err ? 'm-err' : 'm-ok'}" data-msg role="status">${esc(state.flash?.text ?? '')}</div>
     </div>
     <div class="m-card" data-links></div>
-    <div class="m-card"><button class="btn" data-tour>${esc(t('tourAgain'))}</button></div>
-    <div class="m-card"><a class="m-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">${esc(t('privacy'))}</a>
-      <p class="m-note">${esc(t('version', APP_VERSION))}</p></div>`;
+    <div class="m-card"><button class="btn" data-tour>${esc(t('tourAgain'))}</button>
+      <div class="m-about"><a class="m-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">${esc(t('privacy'))}</a>
+      <span class="m-note">${esc(t('version', APP_VERSION))}</span></div></div>`;
   const $ = q => view.querySelector(q);
   $('#ms-rate').onchange = async e => {
     const p = parseRateCents(e.target.value);

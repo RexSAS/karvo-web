@@ -19,7 +19,7 @@ export function startScreen(seenVersion, current, hasLessons) {
 /** Steps: the tab they live on, the element they point at, and their texts. */
 export const TOUR = [
   { tab: 'lessons', sel: '.m-fab', title: 'tourAddTitle', body: 'tourAddBody' },
-  { tab: 'lessons', sel: '.m-notes', title: 'tourEventsTitle', body: 'tourEventsBody' },
+  { tab: 'lessons', sel: '.m-events', title: 'tourEventsTitle', body: 'tourEventsBody' },
   { tab: 'overview', sel: '.m-tabs [data-tab="overview"]', title: 'tourOverviewTitle', body: 'tourOverviewBody' },
   { tab: 'settings', sel: '#ms-rate', title: 'tourSettingsTitle', body: 'tourSettingsBody' },
   { tab: 'settings', sel: '.m-view [data-backup]', title: 'tourBackupTitle', body: 'tourBackupBody' },

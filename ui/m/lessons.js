@@ -17,10 +17,10 @@ export function renderLessons(view, { snapshot, search }, actions) {
   const months = [...new Set(list.map(l => monthOf(l.date)))];
   const soon = upcomingDays(snapshot.events, today(), 3);
   const when = n => (n === 0 ? t('today') : n === 1 ? t('tomorrow') : t('inDays', n));
-  const notesCard = q ? '' : `<div class="m-card m-notes"><div class="m-notes-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
-    ${soon.length ? soon.map(d => d.events.map((e, i) => `<button class="m-note-row" data-event="${e.id}"><span class="d">${i ? '' : esc(when(d.inDays))}</span><span>${esc(e.text)}</span></button>`).join('')).join('')
+  const eventsCard = q ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
+    ${soon.length ? soon.map(d => d.events.map((e, i) => `<button class="m-event-row" data-event="${e.id}"><span class="d">${i ? '' : esc(when(d.inDays))}</span><span>${esc(e.text)}</span></button>`).join('')).join('')
       : `<p class="m-note">${esc(t('noEventsSoon'))}</p>`}</div>`;
-  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${notesCard}
+  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${eventsCard}
     ${months.length ? months.map(m => {
       const ls = list.filter(l => monthOf(l.date) === m);
       return `<div class="m-month"><span>${esc(monthTitle(m))}</span><span>${formatHours(ls.reduce((s, l) => s + l.durationMinutes, 0))}</span></div>
