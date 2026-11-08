@@ -1,7 +1,7 @@
 // Offline cache for the iPhone app (and the PC site): every shipped file is cached on install, then served from the
 // cache while a fresh copy is fetched in the background, so a new release shows on the next launch.
 // FILES and VERSION are rewritten by `node tools/update-sw.mjs` (test/sw.test.js checks the list).
-const VERSION = 6;
+const VERSION = 8;
 const FILES = [
   './',
   'app.js',
@@ -44,6 +44,7 @@ const FILES = [
   'ui/m/lessons.js',
   'ui/m/links.js',
   'ui/m/overview.js',
+  'ui/m/scan.js',
   'ui/m/settings.js',
   'ui/m/sheet.js',
   'ui/money.js',
@@ -52,6 +53,7 @@ const FILES = [
   'ui/settings.js',
   'ui/splash.js',
   'ui/stats.js',
+  'vendor/jsQR.js',
   'vendor/qrcode.js',
 ];
 const CACHE = `karvo-v${VERSION}`;

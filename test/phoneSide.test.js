@@ -100,3 +100,13 @@ test('unpaired from the PC reports the pairing gone', async () => {
   c.emit('state', 'connected'); c.emit('message', { t: 'unpaired' }); c.emit('state', 'unlinked'); await tick();
   assert.equal(gone, 1);
 });
+
+test('the first snapshot goes out even though the connection announces the PC before it reports connected', async () => {
+  const source = createSource({ status: 'phone', canEdit: true, initial: data(), store: fakeStore(), strict: true });
+  const c = fakeConnection(); let syncs = 0;
+  createPhoneLink({ pairing: { roomId: 'r', secret: 's', pcName: 'PC' }, source, text, connect: () => c, onPcSync: () => syncs++ });
+  c.emit('peer', { name: 'PC' });       // link/connection.js emits 'peer' first…
+  c.emit('state', 'connected'); await tick(); // …then 'connected'
+  assert.equal(c.sent.filter(m => m.t === 'snapshot').length, 1);
+  assert.equal(syncs, 1);
+});

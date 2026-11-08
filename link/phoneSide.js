@@ -81,8 +81,9 @@ export function createPhoneLink({ pairing, source, text, onPcSync = () => {}, re
   const sendSnapshot = () => { if (conn.state === 'connected' && data) conn.send('snapshot', snapshotOf(data)).catch(() => {}); };
   const unsub = source.subscribe(d => { data = d; sendSnapshot(); });
 
-  conn.on('peer', () => { onPcSync(); sendSnapshot(); });
   conn.on('state', s => {
+    // connection.js emits 'peer' before 'connected', so the first snapshot waits for 'connected'.
+    if (s === 'connected') { onPcSync(); sendSnapshot(); }
     emit('state', s);
     if ((s === 'unlinked') && !gone) { gone = true; emit('gone'); }
   });
