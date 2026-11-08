@@ -1,7 +1,7 @@
 // Offline cache for the iPhone app (and the PC site): every shipped file is cached on install, then served from the
 // cache while a fresh copy is fetched in the background, so a new release shows on the next launch.
 // FILES and VERSION are rewritten by `node tools/update-sw.mjs` (test/sw.test.js checks the list).
-const VERSION = 2;
+const VERSION = 4;
 const FILES = [
   './',
   'app.js',
@@ -38,8 +38,14 @@ const FILES = [
   'ui/lessonDialog.js',
   'ui/lessons.js',
   'ui/link.js',
+  'ui/m/app.js',
   'ui/m/backup.js',
   'ui/m/i18n.js',
+  'ui/m/lessons.js',
+  'ui/m/links.js',
+  'ui/m/overview.js',
+  'ui/m/settings.js',
+  'ui/m/sheet.js',
   'ui/money.js',
   'ui/overview.js',
   'ui/phone.js',

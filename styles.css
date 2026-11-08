@@ -156,3 +156,49 @@ dialog hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0 6px; }
 .phone-page p { color: var(--muted); max-width: 340px; margin: 0; line-height: 1.5; }
 .phone-page b { color: var(--ink); }
 .phone-page .btn { text-decoration: none; display: inline-block; }
+
+/* ---------- iPhone app (body.m) ---------- */
+body.m { overflow: hidden; }
+.m-screen { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+.m-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; }
+.m-head h1 { font-size: 28px; margin: 0; flex: 1; }
+.m-view { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 120px; }
+.m-tabs { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: #080D1Fee; border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3; }
+.m-tabs button { flex: 1; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--muted); }
+.m-tabs button svg { width: 24px; height: 24px; }
+.m-tabs button[aria-current="page"] { color: var(--primary); }
+.m-fab { position: fixed; right: 20px; bottom: calc(76px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border-radius: 18px;
+  background: var(--primary); color: var(--on-primary); font-size: 30px; line-height: 1; box-shadow: 0 6px 20px #0008; z-index: 2; }
+.m-search { width: 100%; min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--s2); color: var(--ink); font: inherit; margin-bottom: 8px; }
+.m-month { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .8px;
+  text-transform: uppercase; padding: 18px 4px 6px; }
+.m-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; width: 100%; text-align: left; padding: 12px; min-height: 56px;
+  border-radius: 14px; background: linear-gradient(#16213F, #111A33); border: 1px solid var(--line); margin-bottom: 8px; }
+.m-row .who { font-size: 16px; font-weight: 600; }
+.m-row .dur { font-variant-numeric: tabular-nums; font-weight: 600; }
+.m-row .when, .m-row .note { color: var(--muted); font-size: 13px; grid-column: 1 / -1; }
+.m-empty { color: var(--muted); text-align: center; padding: 48px 16px; }
+.m-card { border-radius: 16px; background: linear-gradient(#16213F, #111A33); border: 1px solid var(--line); padding: 14px; margin-bottom: 12px; }
+.m-card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.m-banner { margin: 0 16px 8px; padding: 10px 14px; border-radius: 12px; background: #3A2800; color: var(--gold); display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.m-banner span { flex: 1; }
+.m-banner button { color: var(--gold); font-weight: 700; min-height: 36px; }
+
+/* Bottom sheet */
+.m-sheet { position: fixed; inset: 0; z-index: 10; display: flex; align-items: flex-end; background: #0009; }
+.m-sheet > form, .m-sheet > div { width: 100%; max-height: 92%; overflow-y: auto; background: var(--s4); border-radius: 20px 20px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--outline); }
+.m-sheet h3 { margin: 0 0 8px; font-size: 18px; }
+.m-sheet label { display: block; color: var(--muted); font-size: 13px; margin: 12px 0 4px; }
+.m-sheet input, .m-sheet select, .m-sheet textarea { width: 100%; min-height: 44px; padding: 10px; border-radius: 10px; border: 1px solid var(--outline);
+  background: var(--s2); color: var(--ink); font: inherit; font-size: 16px; }
+.m-sheet .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.m-sheet .err { color: var(--error); font-size: 13px; min-height: 18px; margin-top: 8px; }
+.m-sheet .btns { display: flex; gap: 8px; margin-top: 16px; }
+.m-sheet .btns .btn { flex: 1; min-height: 48px; }
+.m-full { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  padding: 32px 24px; text-align: center; background: var(--bg); }
+.m-full p { color: var(--muted); max-width: 340px; margin: 0; line-height: 1.5; }
+.m-full .btn { min-height: 48px; min-width: 220px; }
+.m-month span:last-child { text-transform: none; letter-spacing: 0; }
