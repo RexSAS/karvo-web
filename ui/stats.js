@@ -24,7 +24,7 @@ export function renderStats(el, { snapshot, view }, actions) {
   columns(w, s.weekdayMinutes);
 }
 
-function areaChart(el, perMonth, cur, actions) {
+export function areaChart(el, perMonth, cur, actions) {
   const W = el.clientWidth, H = el.clientHeight, B = H - 18, T = 16, n = perMonth.length;
   const shown = perMonth.filter(p => p.month <= monthOf(today())).length; // future months: label only, no fake drop to 0
   const mx = Math.max(1, ...perMonth.map(p => p.minutes)), x = i => W * (i + .5) / n, y = v => B - (B - T) * v / mx;
@@ -42,7 +42,7 @@ function areaChart(el, perMonth, cur, actions) {
   el.onclick = e => { const g = e.target.closest('[data-m]'); if (g) actions.setView(g.dataset.m); };
 }
 
-function donut(el, s) {
+export function donut(el, s) {
   const parts = s.top.map((t, i) => [t.name, t.minutes, CAT[i]]);
   if (s.otherMinutes) parts.push(['Other', s.otherMinutes, OTHER]);
   const S = Math.max(60, Math.min(el.clientHeight, 150)), r = S / 2 - 12, C = 2 * Math.PI * r;
@@ -59,7 +59,7 @@ function donut(el, s) {
     <div class="leg">${parts.map(([k, v, c]) => `<div><i style="background:${c}"></i><span>${esc(k)}</span><span>${formatHours(v)} · ${Math.round(v / s.minutes * 100)}%</span></div>`).join('')}</div>`;
 }
 
-function columns(el, vals) {
+export function columns(el, vals) {
   const W = el.clientWidth, H = el.clientHeight, B = H - 18, T = 18, mx = Math.max(1, ...vals), slot = W / 7, w = Math.min(36, slot * .6);
   const best = vals.indexOf(Math.max(...vals));
   el.innerHTML = `<svg><line x1="0" x2="${W}" y1="${B}" y2="${B}" stroke="var(--line)"/>

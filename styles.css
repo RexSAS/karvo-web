@@ -202,3 +202,31 @@ body.m { overflow: hidden; }
 .m-full p { color: var(--muted); max-width: 340px; margin: 0; line-height: 1.5; }
 .m-full .btn { min-height: 48px; min-width: 220px; }
 .m-month span:last-child { text-transform: none; letter-spacing: 0; }
+.m-season { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+.m-season button { width: 44px; height: 44px; border-radius: 50%; background: var(--s5); }
+.m-season strong { font-size: 16px; }
+.m-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.m-kpis .l { color: var(--muted); font-size: 12px; }
+.m-kpis .v { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.m-mrow { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 10px 0; border-top: 1px solid var(--line); align-items: center; }
+.m-mrow:first-of-type { border-top: 0; }
+.m-mrow .name { font-weight: 600; }
+.m-mrow .sub { color: var(--muted); font-size: 13px; }
+.m-mrow .act { grid-row: span 2; }
+.m-mrow .btn { min-height: 40px; }
+.m-chart { height: 170px; position: relative; }
+.m-chart > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.m-chart text { fill: var(--muted); font-size: 10px; }
+.m-chart text.val { fill: var(--ink); font-weight: 600; }
+.m-donut { display: flex; align-items: center; gap: 12px; min-height: 140px; }
+.m-donut svg { flex: none; }
+.m-donut .c1 { font-size: 16px; font-weight: 700; fill: var(--ink); }
+.m-donut .c2 { font-size: 10px; fill: var(--muted); }
+.m-field { display: block; color: var(--muted); font-size: 13px; margin: 10px 0 4px; }
+.m-input { width: 100%; min-height: 44px; padding: 10px; border-radius: 10px; border: 1px solid var(--outline); background: var(--s2); color: var(--ink); font: inherit; font-size: 16px; }
+.m-card .btn { min-height: 44px; }
+.m-card .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.m-note { color: var(--muted); font-size: 13px; margin: 6px 0 0; line-height: 1.4; }
+.m-ok { color: var(--primary); font-size: 13px; min-height: 18px; margin-top: 6px; }
+.m-err { color: var(--error); font-size: 13px; min-height: 18px; margin-top: 6px; }
+.m-link { color: var(--primary); }

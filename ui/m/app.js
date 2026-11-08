@@ -34,7 +34,9 @@ async function saveMeta(next) {
 }
 
 export const actions = {
-  setTab(tab) { state.tab = tab; render(); },
+  setTab(tab) { state.tab = tab; state.flash = null; render(); },
+  /** A result line in Settings that survives the redraw the change itself causes. */
+  flash(text, err = false) { state.flash = { text, err }; render(); },
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
   toggleMoney() { state.showMoney = !state.showMoney; render(); },
   add() {
