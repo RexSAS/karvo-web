@@ -8,7 +8,7 @@ import { execSync } from 'node:child_process';
 test('the service worker precaches every shipped file', () => {
   const root = new URL('..', import.meta.url).pathname;
   const skip = new Set(['docs', 'test', 'tools', 'relay', 'node_modules', '.git', '.superpowers', 'CNAME', 'package.json', 'sw.js', '.gitignore']);
-  const files = execSync('git ls-files', { cwd: root, encoding: 'utf8' }).trim().split('\n')
+  const files = execSync('git ls-files --cached --others --exclude-standard', { cwd: root, encoding: 'utf8' }).trim().split('\n')
     .filter(f => !skip.has(f) && !skip.has(f.split('/')[0]));
   const listed = JSON.parse(readFileSync(join(root, 'sw.js'), 'utf8').match(/const FILES = (\[[\s\S]*?\]);/)[1].replace(/'/g, '"').replace(/,\s*]/, ']'));
   assert.deepEqual(listed.filter(f => f !== './').sort(), files.sort());
