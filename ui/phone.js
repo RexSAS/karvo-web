@@ -19,6 +19,12 @@ export function phoneRoute(ua, standalone) {
 /** Replaces the page with the phone screen; returns true when it did (the caller then stops booting the PC app). */
 export function showPhoneScreen(route = phoneRoute(navigator.userAgent, navigator.standalone === true)) {
   if (!route) return false;
+  // Testing aid: `karvo.skipHomeScreen()` in the console opens the iPhone app in a Safari tab; `karvo.undo()` brings the gate back.
+  const BYPASS = 'karvo.skipHomeScreen';
+  const flag = () => { try { return localStorage.getItem(BYPASS) === '1'; } catch { return false; } };
+  const set = v => { try { v ? localStorage.setItem(BYPASS, '1') : localStorage.removeItem(BYPASS); } catch {} location.reload(); };
+  window.karvo = { skipHomeScreen: () => set(true), undo: () => set(false) };
+  if (route === 'install' && flag()) route = 'iphone';
   if (route === 'iphone') {
     import('./m/app.js').then(m => m.startIphone()).catch(() => {
       document.getElementById('splash')?.remove();
