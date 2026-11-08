@@ -9,7 +9,8 @@ import { esc } from '../html.js';
 import { renderLessons, openLessonSheet, openEventSheet } from './lessons.js';
 import { eventsOn } from '../../domain/events.js';
 import { renderOverview } from './overview.js';
-import { renderSettings } from './settings.js';
+import { renderSettings, APP_VERSION } from './settings.js';
+import { startScreen, runTour, openWelcome, openWhatsNew } from './tour.js';
 import { reminderState, snooze, recordBackup, recordSync } from './backup.js';
 import { startLinks } from './links.js';
 import { t, setLang } from './i18n.js';
@@ -67,6 +68,7 @@ export const actions = {
   },
   snooze() { return saveMeta(snooze(state.meta)); },
   setLang(l) { setLang(l); return saveMeta({ ...state.meta, lang: l }); },
+  tour() { runTour(tab => actions.setTab(tab)); },
   pcSynced() { return saveMeta(recordSync(state.meta)); },
   get state() { return state; },
   render: () => render(),
@@ -136,6 +138,11 @@ export async function startIphone() {
   screen.querySelector('.m-fab').onclick = actions.add;
   screen.querySelector('.m-tabs').onclick = e => { const b = e.target.closest('button'); if (b) actions.setTab(b.dataset.tab); };
   state.source.subscribe(s => { state.snapshot = s; render(); });
+  // Once per version: welcome (fresh app) or What's new (after an update), then the version is remembered.
+  const start = startScreen(state.meta.seenVersion, APP_VERSION, state.snapshot.lessons.length > 0);
+  await saveMeta({ ...state.meta, seenVersion: APP_VERSION });
+  if (start === 'welcome') openWelcome(() => actions.tour());
+  if (start === 'whatsNew') openWhatsNew('Karvo');
   state.links = await startLinks(state, actions);
   setInterval(() => render(), 60 * 60 * 1000); // reminders move on while the app stays open
 }

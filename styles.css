@@ -264,3 +264,20 @@ body.m { overflow: hidden; }
 .m-note-row:first-of-type { border-top: 0; }
 .m-note-row .d { color: var(--gold); font-weight: 600; font-size: 13px; }
 .m-banner.m-today { background: var(--primary-c); color: var(--ink); }
+
+/* Welcome, What's new, quick tour */
+.m-start { text-align: center; }
+.m-start img { border-radius: 18px; margin: 4px auto 8px; display: block; }
+.m-start p { color: var(--muted); line-height: 1.5; margin: 0; }
+.m-start ul { text-align: left; padding-left: 20px; line-height: 1.5; display: grid; gap: 8px; margin: 8px 0 0; }
+.m-tour { position: fixed; inset: 0; z-index: 30; }
+.m-tour .hole { position: fixed; border-radius: 16px; box-shadow: 0 0 0 200vmax #000b; pointer-events: none; transition: all .25s; }
+.m-tour .dim { position: fixed; inset: 0; background: #000b; }
+.m-tour .tip { position: fixed; left: 16px; right: 16px; background: var(--s4); border: 1px solid var(--outline); border-radius: 20px; padding: 16px; }
+.m-tour .tip.top { top: calc(16px + env(safe-area-inset-top)); }
+.m-tour .tip.bottom { bottom: calc(16px + env(safe-area-inset-bottom)); }
+.m-tour .tip small { color: var(--muted); }
+.m-tour .tip h3 { margin: 4px 0; font-size: 18px; }
+.m-tour .tip p { margin: 0; color: var(--ink); line-height: 1.45; }
+.m-tour .btns, .m-start .btns { display: flex; gap: 8px; margin-top: 14px; }
+.m-tour .btns .btn, .m-start .btns .btn { flex: 1; min-height: 44px; }

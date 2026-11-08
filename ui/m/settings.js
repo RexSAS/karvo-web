@@ -6,7 +6,7 @@ import { pickTextFile } from '../files.js';
 import { esc } from '../html.js';
 import { t, getLang, locale } from './i18n.js';
 
-export const APP_VERSION = 'web-3';
+export const APP_VERSION = 'web-4';
 const PRIVACY_URL = 'https://github.com/RexSAS/Karvo/blob/main/PRIVACY.md';
 
 export function renderSettings(view, state, actions) {
@@ -31,6 +31,7 @@ export function renderSettings(view, state, actions) {
       <div class="${state.flash?.err ? 'm-err' : 'm-ok'}" data-msg role="status">${esc(state.flash?.text ?? '')}</div>
     </div>
     <div class="m-card" data-links></div>
+    <div class="m-card"><button class="btn" data-tour>${esc(t('tourAgain'))}</button></div>
     <div class="m-card"><a class="m-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">${esc(t('privacy'))}</a>
       <p class="m-note">${esc(t('version', APP_VERSION))}</p></div>`;
   const $ = q => view.querySelector(q);
@@ -48,5 +49,6 @@ export function renderSettings(view, state, actions) {
     try { const { added, skipped } = await state.source.importCsv(text); actions.flash(t('imported', added, skipped)); }
     catch (e) { actions.flash(e.message, true); }
   };
+  $('[data-tour]').onclick = () => actions.tour();
   renderLinks($('[data-links]'), state, actions);
 }

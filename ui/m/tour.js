@@ -1,0 +1,59 @@
+// Welcome on first open (with a quick spotlight tour), What's new once after an update, and the tour itself.
+import { openSheet } from './sheet.js';
+import { esc } from '../html.js';
+import { t } from './i18n.js';
+
+const num = v => Number(String(v ?? '').replace(/^web-/, '')) || null;
+
+/** 'welcome' on a fresh app, 'whatsNew' after an update (also for apps from before this screen existed), else 'none'. */
+export function startScreen(seenVersion, current, hasLessons) {
+  if (seenVersion == null) return hasLessons ? 'whatsNew' : 'welcome';
+  const seen = num(seenVersion), now = num(current);
+  return seen != null && now != null && seen < now ? 'whatsNew' : 'none';
+}
+
+/** Steps: the tab they live on, the element they point at, and their texts. */
+export const TOUR = [
+  { tab: 'lessons', sel: '.m-fab', title: 'tourAddTitle', body: 'tourAddBody' },
+  { tab: 'lessons', sel: '.m-notes', title: 'tourEventsTitle', body: 'tourEventsBody' },
+  { tab: 'overview', sel: '.m-tabs [data-tab="overview"]', title: 'tourOverviewTitle', body: 'tourOverviewBody' },
+  { tab: 'settings', sel: '#ms-rate', title: 'tourSettingsTitle', body: 'tourSettingsBody' },
+  { tab: 'settings', sel: '.m-view [data-backup]', title: 'tourBackupTitle', body: 'tourBackupBody' },
+  { tab: 'settings', sel: '.m-view [data-links]', title: 'tourPcTitle', body: 'tourPcBody' },
+];
+
+/** Dims the app except the step's element; Next / Skip. `setTab` switches the app to the step's tab. */
+export function runTour(setTab) {
+  const el = document.createElement('div');
+  el.className = 'm-tour';
+  document.body.append(el);
+  let i = 0;
+  const show = () => {
+    const step = TOUR[i];
+    if (!step) return el.remove();
+    setTab(step.tab);
+    const target = document.querySelector(step.sel);
+    target?.scrollIntoView({ block: 'center' });
+    const r = target?.getBoundingClientRect();
+    const low = r && r.top + r.height / 2 > innerHeight / 2;
+    el.innerHTML = `${r ? `<div class="hole" style="left:${r.left - 6}px;top:${r.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px"></div>` : '<div class="dim"></div>'}
+      <div class="tip ${low ? 'top' : 'bottom'}" role="dialog" aria-live="polite"><small>${i + 1}/${TOUR.length}</small><h3>${esc(t(step.title))}</h3><p>${esc(t(step.body))}</p>
+      <div class="btns"><button class="btn" data-skip>${esc(t('tourSkip'))}</button><button class="btn primary" data-next>${esc(t(i === TOUR.length - 1 ? 'tourDone' : 'tourNext'))}</button></div></div>`;
+    el.querySelector('[data-skip]').onclick = () => el.remove();
+    el.querySelector('[data-next]').onclick = () => { i++; show(); };
+  };
+  show();
+}
+
+export function openWelcome(onTour) {
+  const { el, close } = openSheet(`<div class="m-start"><img src="icons/icon-180.png" alt="" width="72" height="72"><h3>${esc(t('welcomeTitle'))}</h3>
+    <p>${esc(t('welcomeBody'))}</p><div class="btns"><button class="btn" data-skip>${esc(t('tourSkip'))}</button><button class="btn primary" data-tour>${esc(t('welcomeTour'))}</button></div></div>`);
+  el.querySelector('[data-skip]').onclick = close;
+  el.querySelector('[data-tour]').onclick = () => { close(); onTour(); };
+}
+
+export function openWhatsNew(version) {
+  const { el, close } = openSheet(`<div class="m-start"><h3>${esc(t('whatsNewTitle', version))}</h3>
+    <ul>${t('whatsNewItems').split('|').map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="btns"><button class="btn primary" data-ok>OK</button></div></div>`);
+  el.querySelector('[data-ok]').onclick = close;
+}
