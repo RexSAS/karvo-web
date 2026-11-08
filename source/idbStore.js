@@ -23,6 +23,10 @@ export function openStore() {
           await run('readwrite', s => s.put(snapshot, KEY));
         },
         remove: () => run('readwrite', s => s.delete(KEY)),
+        // The iPhone app's own keys: 'phone' (its data), 'pairings', 'meta'.
+        loadKey: k => run('readonly', s => s.get(k)).then(v => v ?? null),
+        saveKey: (k, v) => run('readwrite', s => s.put(v, k)),
+        removeKey: k => run('readwrite', s => s.delete(k)),
         // The phone link record { roomId, secret, peerName, linkedAt } lives next to the snapshot.
         loadPairing: () => run('readonly', s => s.get('pairing')).then(v => v ?? null),
         savePairing: record => run('readwrite', s => s.put(record, 'pairing')),
