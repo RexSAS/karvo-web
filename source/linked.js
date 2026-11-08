@@ -50,7 +50,7 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
     setSeasonStart: month => command('setSeasonStart', { month }),
     setDayNote: (date, text) => command('setDayNote', { date, text: text?.trim() || null }),
     importCsv: async text => command('importLessons', { lessons: parseLessonsCsv(text) }),
-    restoreAll: lessons => command('restoreAll', { lessons }),
+    restoreAll: (lessons, dayNotes = {}) => command('restoreAll', { lessons, dayNotes }),
   });
 }
 

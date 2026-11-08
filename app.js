@@ -135,7 +135,7 @@ function startLink(record, existing = null) {
     const n = needsRestore(snap, backupSnap);
     if (!n) return;
     if (confirm(`Restore ${n} lessons to the phone?\n\nYour phone has no lessons. This PC has a backup of ${n}.`))
-      linked.restoreAll(backupSnap.lessons).catch(e => alert(e.message));
+      linked.restoreAll(backupSnap.lessons, backupSnap.dayNotes ?? {}).catch(e => alert(e.message));
     else declined = true; // keep the PC backup (the guard holds empty snapshots back) and don't ask again in this tab
   });
   conn.on('peer', p => {

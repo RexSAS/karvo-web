@@ -32,7 +32,7 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
       ? `<span>Linked phone: ${esc(link.peerName)}</span><button type="button" class="btn small danger" data-unlink>Unlink</button>`
       : '<span class="sub" style="color:var(--muted)">No phone linked</span><button type="button" class="btn small primary" data-link>Link your phone</button>'}</div>` : ''}
     ${backups ? `<hr><label>Backups on this PC (up to ${MAX_BACKUPS})</label><div data-backups class="bk-list"></div>
-    <div class="btns" style="justify-content:flex-start;margin-top:4px"><button type="button" class="btn small" data-backup-now ${snapshot.lessons.length ? '' : 'disabled'}>Back up now</button></div>` : ''}
+    <div class="btns" style="justify-content:flex-start;margin-top:4px"><button type="button" class="btn small" data-backup-now ${snapshot.lessons.length || Object.keys(snapshot.dayNotes ?? {}).length ? '' : 'disabled'}>Back up now</button></div>` : ''}
     ${source.status === 'backup' && snapshot.lessons.length ? '<hr><button type="button" class="btn small danger" data-wipe>Delete lessons from this PC</button>' : ''}
   </form>`;
   document.body.append(d);
@@ -61,7 +61,8 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
     el.querySelectorAll('[data-restore]').forEach(btn => btn.onclick = async () => {
       const b = list.find(x => x.id === btn.dataset.restore);
       if (!confirm(`Replace this PC's copy with the backup of ${b.lessonCount} lessons? The current copy is backed up first.`)) return;
-      if (getSnapshot().lessons.length) await saveBackup(backups.store, getSnapshot(), 'restore');
+      const cur = getSnapshot();
+      if (cur.lessons.length || Object.keys(cur.dayNotes ?? {}).length) await saveBackup(backups.store, cur, 'restore');
       await source.apply({ ...b.snapshot, syncedAt: getSnapshot().syncedAt ?? b.createdAt });
       say(`Restored ${b.lessonCount} lessons`); showBackups();
     });

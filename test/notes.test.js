@@ -53,3 +53,27 @@ test('the linked source sends setDayNote and shows the phone notes', async () =>
   src.subscribe(x => { s = x; })();
   assert.deepEqual(s.dayNotes, {}); // a 3.1 phone sends none
 });
+
+test('restoring to an empty phone brings the PC notes too, merged with the phone ones, invalid ones refused', () => {
+  const lesson = { id: 0, date: '2026-11-06', durationMinutes: 60, student: 'Bo', notes: null, paidOn: null };
+  const r = applyCommand({ ...data, dayNotes: { '2026-11-12': 'phone' } }, 'restoreAll', { lessons: [lesson], dayNotes: { '2026-11-10': 'Meeting' } }, text).data;
+  assert.deepEqual(r.dayNotes, { '2026-11-12': 'phone', '2026-11-10': 'Meeting' });
+  assert.throws(() => applyCommand(data, 'restoreAll', { lessons: [lesson], dayNotes: { 'nope': 'x' } }, text), Refused);
+  assert.equal(applyCommand(data, 'restoreAll', { lessons: [lesson] }, text).data.lessons.length, 1); // a PC without notes still works
+});
+
+test('a missing note text deletes, like Android', () => {
+  assert.deepEqual(applyCommand({ ...data, dayNotes: { '2026-11-10': 'x' } }, 'setDayNote', { date: '2026-11-10' }, text).data.dayNotes, {});
+});
+
+import { needsSyncBackup } from '../source/pcBackups.js';
+test('a PC copy with notes but no lessons is still backed up', () =>
+  assert.equal(needsSyncBackup([], { lessons: [], dayNotes: { '2026-11-10': 'x' } }), true));
+
+test('the linked source restores lessons and notes together', async () => {
+  const h = { state: [], message: [], peer: [] }, sent = [];
+  const conn = { state: 'connected', on(ev, fn) { h[ev].push(fn); }, async send(t, f) { sent.push({ t, ...f }); } };
+  const src = createLinkedSource(conn, null);
+  src.restoreAll([{ id: 1 }], { '2026-11-10': 'Meeting' }).catch(() => {}); await new Promise(r => setTimeout(r, 0));
+  assert.deepEqual(sent.at(-1).args, { lessons: [{ id: 1 }], dayNotes: { '2026-11-10': 'Meeting' } });
+});

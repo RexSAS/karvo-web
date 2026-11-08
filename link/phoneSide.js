@@ -59,11 +59,17 @@ export function applyCommand(data, op, args, text) {
     }
     case 'restoreAll': {
       const incoming = list();
+      // The PC's notes come along (3.2+ PCs); validated first, then merged with any the phone already has.
+      const notes = a.dayNotes == null ? {} : a.dayNotes;
+      if (typeof notes !== 'object' || Array.isArray(notes) || Object.entries(notes).some(([d, v]) => !isDate(d) || typeof v !== 'string' || v.trim().length > MAX_NOTE))
+        throw new Refused(text('invalidData'));
       if (lessons.length) throw new Refused(text('phoneNotEmpty'));
-      return { data: { ...data, lessons: withIds([], incoming) } };
+      let dayNotes = data.dayNotes ?? {};
+      for (const [d, v] of Object.entries(notes)) dayNotes = setNote(dayNotes, d, v);
+      return { data: { ...data, lessons: withIds([], incoming), dayNotes } };
     }
     case 'setDayNote':
-      if (!isDate(a.date) || (a.text !== null && typeof a.text !== 'string') || (a.text ?? '').trim().length > MAX_NOTE)
+      if (!isDate(a.date) || (a.text != null && typeof a.text !== 'string') || (a.text ?? '').trim().length > MAX_NOTE)
         throw new Refused(text('invalidData'));
       return { data: { ...data, dayNotes: setNote(data.dayNotes, a.date, a.text) } };
     default: throw new Refused(text('unknownCommand'));
