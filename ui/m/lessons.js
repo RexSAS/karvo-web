@@ -2,7 +2,7 @@
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { validateLesson, parseDurationField } from '../../domain/validate.js';
 import { students } from '../../domain/stats.js';
-import { upcomingNotes, MAX_NOTE } from '../../domain/notes.js';
+import { upcomingDays, MAX_EVENT } from '../../domain/events.js';
 import { esc } from '../html.js';
 import { openSheet } from './sheet.js';
 import { t, locale } from './i18n.js';
@@ -15,11 +15,12 @@ export function renderLessons(view, { snapshot, search }, actions) {
   const list = snapshot.lessons.filter(l => !q || l.student.toLowerCase().includes(q) || (l.notes ?? '').toLowerCase().includes(q))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   const months = [...new Set(list.map(l => monthOf(l.date)))];
-  const notes = upcomingNotes(snapshot.dayNotes, today()).slice(0, 5);
-  const notesCard = q ? '' : `<div class="m-card m-notes"><div class="m-notes-head"><h2>${esc(t('notes'))}</h2><button class="btn small" data-note-new>${esc(t('addNote'))}</button></div>
-    ${notes.length ? notes.map(n => `<button class="m-note-row" data-note="${n.date}"><span class="d">${esc(n.date === today() ? t('today') : dayTitle(n.date))}</span><span>${esc(n.text)}</span></button>`).join('')
-      : `<p class="m-note">${esc(t('noNotes'))}</p>`}</div>`;
-  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${notesCard}
+  const soon = upcomingDays(snapshot.events, today(), 3);
+  const when = n => (n === 0 ? t('today') : n === 1 ? t('tomorrow') : t('inDays', n));
+  const eventsCard = q ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
+    ${soon.length ? soon.map(d => d.events.map((e, i) => `<button class="m-event-row" data-event="${e.id}"><span class="d">${i ? '' : esc(when(d.inDays))}</span><span>${esc(e.text)}</span></button>`).join('')).join('')
+      : `<p class="m-note">${esc(t('noEventsSoon'))}</p>`}</div>`;
+  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${eventsCard}
     ${months.length ? months.map(m => {
       const ls = list.filter(l => monthOf(l.date) === m);
       return `<div class="m-month"><span>${esc(monthTitle(m))}</span><span>${formatHours(ls.reduce((s, l) => s + l.durationMinutes, 0))}</span></div>
@@ -29,8 +30,8 @@ export function renderLessons(view, { snapshot, search }, actions) {
   const input = view.querySelector('.m-search');
   input.oninput = () => actions.setSearch(input.value);
   view.onclick = e => {
-    const n = e.target.closest('[data-note],[data-note-new]');
-    if (n) return actions.editNote(n.dataset.note ?? null);
+    const n = e.target.closest('[data-event],[data-event-new]');
+    if (n) return actions.editEvent(n.dataset.event ? Number(n.dataset.event) : null);
     const b = e.target.closest('.m-row'); if (b) actions.edit(snapshot.lessons.find(l => l.id === Number(b.dataset.id)));
   };
 }
@@ -69,19 +70,25 @@ export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
   return s;
 }
 
-/** Add (date = null) or edit one day's note. */
-export function openNoteSheet({ date, text = '', onSave }) {
-  const s = openSheet(`<form novalidate><h3>${esc(t(date ? 'editNote' : 'addNote'))}</h3>
-    <label for="mn-date">${esc(t('date'))}</label><input type="date" id="mn-date" value="${esc(date ?? today())}" ${date ? 'disabled' : ''}>
-    <label for="mn-text">${esc(t('notes'))}</label><textarea id="mn-text" rows="3" maxlength="${MAX_NOTE}" placeholder="${esc(t('notePlaceholder'))}">${esc(text)}</textarea>
-    <p class="m-note">${esc(t('noteHint'))}</p>
+/** Add (event = null) or edit one event. */
+export function openEventSheet({ event = null, onSave, onDelete }) {
+  const s = openSheet(`<form novalidate><h3>${esc(t(event ? 'editEvent' : 'newEvent'))}</h3>
+    <label for="me-date">${esc(t('date'))}</label><input type="date" id="me-date" value="${esc(event?.date ?? today())}">
+    <label for="me-text">${esc(t('event'))}</label><textarea id="me-text" rows="3" maxlength="${MAX_EVENT}" placeholder="${esc(t('eventPlaceholder'))}">${esc(event?.text ?? '')}</textarea>
+    <p class="m-note">${esc(t('eventHint'))}</p>
     <div class="err" role="alert"></div>
-    <div class="btns">${text ? `<button type="button" class="btn danger" data-del>${esc(t('delete'))}</button>` : ''}
+    <div class="btns">${event ? `<button type="button" class="btn danger" data-del>${esc(t('delete'))}</button>` : ''}
       <button type="button" class="btn" data-cancel>${esc(t('cancel'))}</button><button class="btn primary">${esc(t('save'))}</button></div></form>`);
   const $ = q => s.el.querySelector(q);
-  const run = async (d, v) => { try { await onSave(d, v); s.close(); } catch (e) { $('.err').textContent = e.message; } };
+  const run = async fn => { try { await fn(); s.close(); } catch (e) { $('.err').textContent = e.message; } };
   $('[data-cancel]').onclick = s.close;
-  $('[data-del]')?.addEventListener('click', () => run(date, null));
-  $('form').onsubmit = e => { e.preventDefault(); const d = $('#mn-date').value; if (!d) { $('.err').textContent = t('pickDate'); return; } run(d, $('#mn-text').value); };
+  $('[data-del]')?.addEventListener('click', () => { if (confirm(t('deleteEventConfirm'))) run(() => onDelete(event.id)); });
+  $('form').onsubmit = e => {
+    e.preventDefault();
+    const date = $('#me-date').value, text = $('#me-text').value.trim();
+    if (!date) { $('.err').textContent = t('pickDate'); return; }
+    if (!text) { $('.err').textContent = t('writeEvent'); return; }
+    run(() => onSave({ date, text }));
+  };
   return s;
 }

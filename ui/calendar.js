@@ -2,6 +2,7 @@
 import { calendarDays, formatHours, addMonths, monthOf, today } from '../domain/dates.js';
 import { paidStatus } from '../domain/paid.js';
 import { esc } from './html.js';
+import { eventsOn } from '../domain/events.js';
 
 const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const BADGE = { PAID: ['✓ Paid', ''], PARTLY_PAID: ['Partly paid', 'unpaid'], UNPAID: ['€ Unpaid', 'unpaid'] };
@@ -22,9 +23,9 @@ export function renderCalendar(el, { snapshot, view, selDay }, actions) {
     </div>
     <div class="cal-grid">${WD.map(w => `<div class="wd">${w}</div>`).join('')}${calendarDays(view).map(d => {
       const min = byDay[d] ?? 0;
-      const note = snapshot.dayNotes?.[d];
-      const c = ['cell', monthOf(d) !== view && 'other', d === now && 'today', d === selDay && 'sel', min && 'has', note && 'noted'].filter(Boolean).join(' ');
-      return `<button class="${c}" data-day="${d}" style="--load:${min / max}" ${note ? `data-tip="${esc(note)}"` : ''} aria-label="${d}${min ? ', ' + formatHours(min) : ''}${note ? ', note: ' + esc(note) : ''}">
+      const evs = eventsOn(snapshot.events, d), note = evs.map(e => e.text).join(' · ');
+      const c = ['cell', monthOf(d) !== view && 'other', d === now && 'today', d === selDay && 'sel', min && 'has', evs.length && 'noted'].filter(Boolean).join(' ');
+      return `<button class="${c}" data-day="${d}" style="--load:${min / max}" ${note ? `data-tip="${esc(note)}"` : ''} aria-label="${d}${min ? ', ' + formatHours(min) : ''}${note ? ', events: ' + esc(note) : ''}">
         <span class="n">${Number(d.slice(8))}</span><span class="h">${min ? formatHours(min) : ''}</span></button>`;
     }).join('')}</div>`;
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => actions.setView(addMonths(view, Number(b.dataset.go))));

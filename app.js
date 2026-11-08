@@ -21,7 +21,7 @@ import { renderOverview } from './ui/overview.js';
 import { renderStats } from './ui/stats.js';
 import { openSettings } from './ui/settings.js';
 import { openLinkDialog } from './ui/link.js';
-import { openNoteDialog } from './ui/noteDialog.js';
+import { openEventDialog } from './ui/eventDialog.js';
 import { showPhoneScreen } from './ui/phone.js';
 import { students } from './domain/stats.js';
 
@@ -39,9 +39,11 @@ const state = {
 export const actions = {
   setView(month) { state.view = month; state.selDay = null; render(); },
   selectDay(date) { state.view = monthOf(date); state.selDay = date; render(); },
-  editNote(date) {
-    openNoteDialog({ date, title: new Date(date + 'T12:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' }),
-      text: state.snapshot.dayNotes?.[date] ?? '', onSave: (d, text) => state.source.setDayNote(d, text) });
+  editEvent(date, id = null) {
+    const event = id == null ? null : state.snapshot.events.find(e => e.id === id);
+    openEventDialog({ title: new Date(date + 'T12:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' }), event,
+      onSave: text => event ? state.source.updateEvent({ ...event, text }) : state.source.addEvent({ date, text }),
+      onDelete: eid => state.source.deleteEvent(eid) });
   },
   setStatsLifetime(on) { state.statsLifetime = on; render(); },
   toggleMoney() {
@@ -135,7 +137,7 @@ function startLink(record, existing = null) {
     const n = needsRestore(snap, backupSnap);
     if (!n) return;
     if (confirm(`Restore ${n} lessons to the phone?\n\nYour phone has no lessons. This PC has a backup of ${n}.`))
-      linked.restoreAll(backupSnap.lessons, backupSnap.dayNotes ?? {}).catch(e => alert(e.message));
+      linked.restoreAll(backupSnap.lessons, backupSnap.events ?? []).catch(e => alert(e.message));
     else declined = true; // keep the PC backup (the guard holds empty snapshots back) and don't ask again in this tab
   });
   conn.on('peer', p => {

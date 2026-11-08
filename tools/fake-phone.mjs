@@ -15,7 +15,7 @@ const EN = { StudentBlank: 'Enter a student name', DurationZero: 'Duration must 
   MinutesOver59: 'Minutes must be 0–59', lessonGone: 'That lesson no longer exists',
   phoneNotEmpty: 'This phone already has lessons, so nothing was restored', invalidRate: 'Enter a rate like 30 or 27.50',
   invalidMonth: 'Pick a month from January to December', invalidData: "The phone couldn't read that change",
-  unknownCommand: 'Update Karvo on your phone to do this from the PC', saveFailed: "The phone couldn't save that change" };
+  unknownCommand: 'Update Karvo on your phone to do this from the PC', eventGone: 'That event no longer exists', saveFailed: "The phone couldn't save that change" };
 
 const args = process.argv.slice(2), opt = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; };
 const relayUrl = opt('--relay') ?? RELAY_URL, statePath = opt('--state') ?? 'fake-phone.json';

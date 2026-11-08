@@ -4,7 +4,7 @@ import { markPaid, markUnpaid } from '../domain/paid.js';
 import { planImport } from '../domain/importPlan.js';
 import { validateLesson, MAX_DURATION_MINUTES } from '../domain/validate.js';
 import { createConnection, deleteRoom, RELAY_URL } from './connection.js';
-import { setNote, MAX_NOTE } from '../domain/notes.js';
+import { addEvent, updateEvent, deleteEvent, mergeEvents, MAX_EVENT } from '../domain/events.js';
 
 export class Refused extends Error {}
 
@@ -23,6 +23,12 @@ function checkLesson(l, text) {
   if (m > MAX_DURATION_MINUTES && !errors.includes('DurationTooLong')) errors.push('DurationTooLong');
   if (errors.length) throw new Refused(errors.map(text).join(' · '));
   return { id: l.id, date: l.date, durationMinutes: m, student: l.student.trim(), notes: l.notes?.trim() || null, paidOn: l.paidOn ?? null };
+}
+
+function checkEvent(e, text) {
+  if (!e || typeof e !== 'object' || !isDate(e.date) || typeof e.text !== 'string' || !e.text.trim() || e.text.trim().length > MAX_EVENT)
+    throw new Refused(text('invalidData'));
+  return { date: e.date, text: e.text.trim() };
 }
 
 const nextId = lessons => Math.max(0, ...lessons.map(l => l.id)) + 1;
@@ -59,24 +65,27 @@ export function applyCommand(data, op, args, text) {
     }
     case 'restoreAll': {
       const incoming = list();
-      // The PC's notes come along (3.2+ PCs); validated first, then merged with any the phone already has.
-      const notes = a.dayNotes == null ? {} : a.dayNotes;
-      if (typeof notes !== 'object' || Array.isArray(notes) || Object.entries(notes).some(([d, v]) => !isDate(d) || typeof v !== 'string' || v.trim().length > MAX_NOTE))
-        throw new Refused(text('invalidData'));
+      // The PC's events come along (3.2+ PCs); validated first, then merged with any the phone already has.
+      const events = a.events == null ? [] : a.events;
+      if (!Array.isArray(events)) throw new Refused(text('invalidData'));
+      const checked = events.map(e => checkEvent(e, text));
       if (lessons.length) throw new Refused(text('phoneNotEmpty'));
-      let dayNotes = data.dayNotes ?? {};
-      for (const [d, v] of Object.entries(notes)) dayNotes = setNote(dayNotes, d, v);
-      return { data: { ...data, lessons: withIds([], incoming), dayNotes } };
+      return { data: { ...data, lessons: withIds([], incoming), events: mergeEvents(data.events ?? [], checked) } };
     }
-    case 'setDayNote':
-      if (!isDate(a.date) || (a.text != null && typeof a.text !== 'string') || (a.text ?? '').trim().length > MAX_NOTE)
-        throw new Refused(text('invalidData'));
-      return { data: { ...data, dayNotes: setNote(data.dayNotes, a.date, a.text) } };
+    case 'addEvent': return { data: { ...data, events: addEvent(data.events ?? [], checkEvent(a.event, text)) } };
+    case 'updateEvent': {
+      const e = checkEvent(a.event, text);
+      if (!(data.events ?? []).some(x => x.id === a.event.id)) throw new Refused(text('eventGone'));
+      return { data: { ...data, events: updateEvent(data.events, { ...e, id: a.event.id }) } };
+    }
+    case 'deleteEvent':
+      if (!(data.events ?? []).some(x => x.id === a.id)) throw new Refused(text('eventGone'));
+      return { data: { ...data, events: deleteEvent(data.events, a.id) } };
     default: throw new Refused(text('unknownCommand'));
   }
 }
 
-const snapshotOf = d => ({ lessons: d.lessons, rateCents: d.rateCents, seasonStartMonth: d.seasonStartMonth, dayNotes: d.dayNotes ?? {},
+const snapshotOf = d => ({ lessons: d.lessons, rateCents: d.rateCents, seasonStartMonth: d.seasonStartMonth, events: d.events ?? [],
   timeZoneId: d.timeZoneId ?? Intl.DateTimeFormat().resolvedOptions().timeZone });
 
 /**

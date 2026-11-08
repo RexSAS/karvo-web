@@ -1,9 +1,10 @@
 // The phone, live, behind the same source interface as demo and backup (spec "PC behaviour").
 // Commands go to the phone; the screen only changes when the phone sends a new snapshot.
 import { parseLessonsCsv } from '../domain/csv.js';
+import { normalizeEvents } from '../domain/events.js';
 
 export function createLinkedSource(connection, store, { initial = null, timeoutMs = 15000, peerName = '' } = {}) {
-  let snapshot = initial, nextId = 1;
+  let snapshot = initial && normalizeEvents(initial), nextId = 1;
   const subs = new Set(), pending = new Map();
   const src = { status: 'linked', canEdit: true, peerName, storageError: false };
 
@@ -12,8 +13,8 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
   connection.on('peer', p => { src.peerName = p.name; });
   connection.on('message', async msg => {
     if (msg.t === 'snapshot') {
-      const { lessons, rateCents, seasonStartMonth, timeZoneId, dayNotes = {} } = msg; // a 3.1 phone sends no notes
-      snapshot = { lessons, rateCents, seasonStartMonth, timeZoneId, dayNotes, syncedAt: new Date().toISOString() };
+      const { lessons, rateCents, seasonStartMonth, timeZoneId, events = [] } = msg; // a 3.1 phone sends no events
+      snapshot = { lessons, rateCents, seasonStartMonth, timeZoneId, events, syncedAt: new Date().toISOString() };
       subs.forEach(fn => fn(snapshot));
       try { await store?.save(snapshot); src.storageError = false; } catch { src.storageError = true; }
     } else if (msg.t === 'ack') {
@@ -48,9 +49,11 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
     markUnpaid: month => command('markUnpaid', { month }),
     setRate: rateCents => command('setRate', { rateCents }),
     setSeasonStart: month => command('setSeasonStart', { month }),
-    setDayNote: (date, text) => command('setDayNote', { date, text: text?.trim() || null }),
+    addEvent: event => command('addEvent', { event }),
+    updateEvent: event => command('updateEvent', { event }),
+    deleteEvent: id => command('deleteEvent', { id }),
     importCsv: async text => command('importLessons', { lessons: parseLessonsCsv(text) }),
-    restoreAll: (lessons, dayNotes = {}) => command('restoreAll', { lessons, dayNotes }),
+    restoreAll: (lessons, events = []) => command('restoreAll', { lessons, events: events.map(({ date, text }) => ({ date, text })) }),
   });
 }
 

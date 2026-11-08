@@ -22,5 +22,6 @@ export function demoLessons(now = today()) {
 }
 
 export const createDemoSource = () =>
-  createSource({ status: 'demo', canEdit: true, initial: { ...emptySnapshot(), lessons: demoLessons(), rateCents: 3000, dayNotes: {
-    [addDays(today(), 1)]: 'Ski school meeting 17:00', [addDays(today(), 5)]: 'Race training · Tognola' } } });
+  createSource({ status: 'demo', canEdit: true, initial: { ...emptySnapshot(), lessons: demoLessons(), rateCents: 3000, events: [
+    { id: 1, date: today(), text: 'Ski school meeting 17:00' }, { id: 2, date: addDays(today(), 2), text: 'Race training · Tognola' },
+    { id: 3, date: addDays(today(), 2), text: 'Dinner with the instructors' }, { id: 4, date: addDays(today(), 9), text: 'Avalanche course' }] } });

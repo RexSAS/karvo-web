@@ -2,13 +2,17 @@
 import { markPaid, markUnpaid } from '../domain/paid.js';
 import { parseLessonsCsv } from '../domain/csv.js';
 import { planImport } from '../domain/importPlan.js';
-import { setNote } from '../domain/notes.js';
+import { addEvent, updateEvent, deleteEvent, normalizeEvents, MAX_EVENT } from '../domain/events.js';
 
-export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 11, syncedAt: null, dayNotes: {} });
+export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 11, syncedAt: null, events: [] });
 
 // strict (the iPhone, where this is the only copy): a failed save rejects and keeps the previous snapshot.
+function checkEvent({ text }) {
+  if (!text?.trim() || text.trim().length > MAX_EVENT) throw new Error(`Write 1 to ${MAX_EVENT} characters`);
+}
+
 export function createSource({ status, canEdit, initial, store = null, strict = false }) {
-  let snapshot = initial;
+  let snapshot = normalizeEvents(initial); // copies saved before events had one note per day
   const subs = new Set();
   // Every change runs in one queue and is built from the latest snapshot inside it: two changes at the same moment
   // (two PCs, or a PC and the iPhone) never build on the same old copy.
@@ -47,10 +51,10 @@ export function createSource({ status, canEdit, initial, store = null, strict = 
     markPaid: edit((ls, month, paidOn) => markPaid(ls, month, paidOn)),
     markUnpaid: edit((ls, month) => markUnpaid(ls, month)),
     setRate: rateCents => serial(() => commit({ ...snapshot, rateCents })),
-    async setDayNote(date, text) {
-      if (!canEdit) throw new Error('read-only');
-      return serial(() => commit({ ...snapshot, dayNotes: setNote(snapshot.dayNotes, date, text) }));
-    },
+    // Events: several per day.
+    addEvent: async ev => { if (!canEdit) throw new Error('read-only'); checkEvent(ev); return serial(() => commit({ ...snapshot, events: addEvent(snapshot.events, ev) })); },
+    updateEvent: async ev => { if (!canEdit) throw new Error('read-only'); checkEvent(ev); return serial(() => commit({ ...snapshot, events: updateEvent(snapshot.events, ev) })); },
+    deleteEvent: async id => { if (!canEdit) throw new Error('read-only'); return serial(() => commit({ ...snapshot, events: deleteEvent(snapshot.events, id) })); },
     setSeasonStart: seasonStartMonth => serial(() => commit({ ...snapshot, seasonStartMonth })),
     async importCsv(text) {
       const incoming = parseLessonsCsv(text);

@@ -6,9 +6,11 @@ import { students } from '../../domain/stats.js';
 import { lessonsToCsv, csvFileBytes, csvFileName } from '../../domain/csv.js';
 import { today } from '../../domain/dates.js';
 import { esc } from '../html.js';
-import { renderLessons, openLessonSheet, openNoteSheet } from './lessons.js';
+import { renderLessons, openLessonSheet, openEventSheet } from './lessons.js';
+import { eventsOn } from '../../domain/events.js';
 import { renderOverview } from './overview.js';
-import { renderSettings } from './settings.js';
+import { renderSettings, APP_VERSION } from './settings.js';
+import { startScreen, runTour, openWelcome, openWhatsNew } from './tour.js';
 import { reminderState, snooze, recordBackup, recordSync } from './backup.js';
 import { startLinks } from './links.js';
 import { t, setLang } from './i18n.js';
@@ -19,6 +21,27 @@ const ICONS = {
   overview: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
 };
+
+// Android's Alpine Night backdrop: fixed stars, a far and a near ridge, faint snowflakes on Settings (decorative only).
+const STARS = [[.08,.04,.9],[.20,.12,.7],[.33,.07,.5],[.41,.27,.6],[.52,.03,.8],[.61,.18,.5],[.70,.08,.9],[.78,.30,.6],[.86,.14,1],[.93,.40,.7],
+  [.12,.32,.5],[.27,.22,.6],[.47,.15,.4],[.57,.34,.5],[.66,.42,.4],[.83,.05,.5],[.03,.19,.6],[.37,.38,.4],[.74,.24,.7],[.96,.09,.5]];
+const FAR = [[0,.55],[.12,.35],[.22,.5],[.38,.12],[.52,.45],[.64,.28],[.78,.55],[.9,.22],[1,.4]];
+const NEAR = [[0,.82],[.15,.6],[.28,.76],[.45,.5],[.6,.78],[.75,.62],[.88,.8],[1,.7]];
+const FLAKE = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22z"/></svg>';
+const ridge = pts => `M0,100 ${pts.map(([x, y]) => `L${x * 100},${y * 100}`).join(' ')} L100,100 Z`;
+function backdrop() {
+  const el = document.createElement('div');
+  el.className = 'm-backdrop';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `<svg class="stars" viewBox="0 0 100 100" preserveAspectRatio="none">${STARS.map(([x, y, a], i) =>
+    `<ellipse cx="${x * 100}" cy="${y * 100}" rx="${i % 3 ? .28 : .4}" ry="${i % 3 ? .13 : .19}" fill="#fff" opacity="${a}"/>`).join('')}</svg>
+    <svg class="ridges" viewBox="0 0 100 100" preserveAspectRatio="none"><defs>
+      <linearGradient id="bd-far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D5AA8" stop-opacity=".45"/><stop offset="1" stop-color="#3D5AA8" stop-opacity="0"/></linearGradient>
+      <linearGradient id="bd-near" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9F0FF" stop-opacity=".28"/><stop offset=".3" stop-color="#4F69B8" stop-opacity=".45"/><stop offset="1" stop-color="#0C1530"/></linearGradient></defs>
+      <path d="${ridge(FAR)}" fill="url(#bd-far)"/><path d="${ridge(NEAR)}" fill="url(#bd-near)"/></svg>
+    <i class="flake f1">${FLAKE}</i><i class="flake f2">${FLAKE}</i><i class="flake f3">${FLAKE}</i>`;
+  return el;
+}
 
 const state = { tab: 'lessons', snapshot: null, meta: null, search: '', showMoney: false, source: null, store: null, links: null };
 
@@ -46,8 +69,10 @@ export const actions = {
     openLessonSheet({ lesson, names: students(state.snapshot.lessons).map(s => s.name),
       onSave: l => state.source.updateLesson(l), onDelete: id => state.source.deleteLesson(id) });
   },
-  editNote(date) {
-    openNoteSheet({ date, text: date ? state.snapshot.dayNotes?.[date] ?? '' : '', onSave: (d, text) => state.source.setDayNote(d, text) });
+  editEvent(id) {
+    const event = id == null ? null : state.snapshot.events.find(e => e.id === id);
+    openEventSheet({ event, onSave: v => event ? state.source.updateEvent({ ...event, ...v }) : state.source.addEvent(v),
+      onDelete: eid => state.source.deleteEvent(eid) });
   },
   /** CSV through the Share sheet; only a completed share counts as a backup. */
   async backupNow() {
@@ -64,6 +89,7 @@ export const actions = {
   },
   snooze() { return saveMeta(snooze(state.meta)); },
   setLang(l) { setLang(l); return saveMeta({ ...state.meta, lang: l }); },
+  tour() { runTour(tab => actions.setTab(tab)); },
   pcSynced() { return saveMeta(recordSync(state.meta)); },
   get state() { return state; },
   render: () => render(),
@@ -94,8 +120,8 @@ function render({ keepFocus = false } = {}) {
   const titles = { lessons: t('lessons'), overview: t('overview'), settings: t('settings') };
   screen.querySelector('.m-head h1').textContent = titles[state.tab];
   const banner = screen.querySelector('.m-banner-slot');
-  const todayNote = state.snapshot.dayNotes?.[today()];
-  banner.innerHTML = (todayNote ? `<div class="m-banner m-today" role="status"><span>${esc(t('noteToday', todayNote))}</span></div>` : '') + (r.level === 'banner'
+  const todays = eventsOn(state.snapshot.events, today()).map(e => e.text).join(' · ');
+  banner.innerHTML = (todays ? `<div class="m-banner m-today" role="status"><span>${esc(t('eventToday', todays))}</span></div>` : '') + (r.level === 'banner'
     ? `<div class="m-banner" role="status"><span>${esc(backupLine(r))}</span><button data-backup>${esc(t('backupNow'))}</button></div>` : '');
   banner.querySelector('[data-backup]')?.addEventListener('click', () => actions.backupNow());
   const view = screen.querySelector('.m-view');
@@ -107,6 +133,7 @@ function render({ keepFocus = false } = {}) {
   screen.querySelectorAll('.m-tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === state.tab ? 'page' : 'false'));
   screen.querySelectorAll('.m-tabs button span').forEach(s => { s.textContent = titles[s.parentElement.dataset.tab]; });
   screen.querySelector('.m-fab').hidden = state.tab !== 'lessons';
+  document.querySelector('.m-backdrop')?.setAttribute('data-tab', state.tab);
   renderBlocking(r);
 }
 
@@ -129,10 +156,16 @@ export async function startIphone() {
     <button class="m-fab" aria-label="${esc(t('addLesson'))}">+</button>
     <nav class="m-tabs">${['lessons', 'overview', 'settings'].map(k => `<button data-tab="${k}">${ICONS[k]}<span></span></button>`).join('')}</nav>`;
   document.body.prepend(screen);
+  screen.before(backdrop());
   runSplash();
   screen.querySelector('.m-fab').onclick = actions.add;
   screen.querySelector('.m-tabs').onclick = e => { const b = e.target.closest('button'); if (b) actions.setTab(b.dataset.tab); };
   state.source.subscribe(s => { state.snapshot = s; render(); });
+  // Once per version: welcome (fresh app) or What's new (after an update), then the version is remembered.
+  const start = startScreen(state.meta.seenVersion, APP_VERSION, state.snapshot.lessons.length > 0);
+  await saveMeta({ ...state.meta, seenVersion: APP_VERSION });
+  if (start === 'welcome') openWelcome(() => actions.tour());
+  if (start === 'whatsNew') openWhatsNew('Karvo');
   state.links = await startLinks(state, actions);
   setInterval(() => render(), 60 * 60 * 1000); // reminders move on while the app stays open
 }
