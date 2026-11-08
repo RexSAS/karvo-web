@@ -22,4 +22,5 @@ export function demoLessons(now = today()) {
 }
 
 export const createDemoSource = () =>
-  createSource({ status: 'demo', canEdit: true, initial: { ...emptySnapshot(), lessons: demoLessons(), rateCents: 3000 } });
+  createSource({ status: 'demo', canEdit: true, initial: { ...emptySnapshot(), lessons: demoLessons(), rateCents: 3000, dayNotes: {
+    [addDays(today(), 1)]: 'Ski school meeting 17:00', [addDays(today(), 5)]: 'Race training · Tognola' } } });

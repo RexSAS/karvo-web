@@ -250,3 +250,9 @@ body.m { overflow: hidden; }
 .bk { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
 .bk b { color: var(--ink); font-weight: 600; }
 .bk span:last-child { display: flex; gap: 4px; flex: none; }
+.cell.noted { position: relative; }
+.cell.noted::after { content: ''; position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.day-note { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; background: #3A2800; flex: none; }
+.day-note .dn-text { flex: 1; color: var(--gold); font-size: 13px; overflow-wrap: anywhere; }
+.day-note .dn-text.sub { color: var(--muted); }
+.day-note b { color: var(--ink); font-weight: 600; }

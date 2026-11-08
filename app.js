@@ -21,6 +21,7 @@ import { renderOverview } from './ui/overview.js';
 import { renderStats } from './ui/stats.js';
 import { openSettings } from './ui/settings.js';
 import { openLinkDialog } from './ui/link.js';
+import { openNoteDialog } from './ui/noteDialog.js';
 import { showPhoneScreen } from './ui/phone.js';
 import { students } from './domain/stats.js';
 
@@ -38,6 +39,10 @@ const state = {
 export const actions = {
   setView(month) { state.view = month; state.selDay = null; render(); },
   selectDay(date) { state.view = monthOf(date); state.selDay = date; render(); },
+  editNote(date) {
+    openNoteDialog({ date, title: new Date(date + 'T12:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' }),
+      text: state.snapshot.dayNotes?.[date] ?? '', onSave: (d, text) => state.source.setDayNote(d, text) });
+  },
   setStatsLifetime(on) { state.statsLifetime = on; render(); },
   toggleMoney() {
     state.showMoney = !state.showMoney;
