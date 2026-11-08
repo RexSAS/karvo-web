@@ -37,6 +37,7 @@ const state = {
 export const actions = {
   setView(month) { state.view = month; state.selDay = null; render(); },
   selectDay(date) { state.view = monthOf(date); state.selDay = date; render(); },
+  setStatsLifetime(on) { state.statsLifetime = on; render(); },
   toggleMoney() {
     state.showMoney = !state.showMoney;
     document.body.classList.add('reveal');

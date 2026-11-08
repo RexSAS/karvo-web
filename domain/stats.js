@@ -1,6 +1,6 @@
 // Statistics for the bottom row; student matching follows Android Stats.kt.
 import { monthOf, weekdayIndex } from './dates.js';
-import { seasonMonths } from './seasons.js';
+import { seasonMonths, seasonOf, seasonLabel } from './seasons.js';
 
 const TOP = 4;
 export const studentKey = name => name.trim().toLowerCase();
@@ -29,5 +29,22 @@ export function seasonStats(lessons, season) {
     top: all.slice(0, TOP),
     otherMinutes: all.slice(TOP).reduce((s, x) => s + x.minutes, 0),
     weekdayMinutes,
+  };
+}
+
+/** Every lesson ever: totals, hours per season (oldest first), top students and weekdays. */
+export function lifetimeStats(lessons, startMonth) {
+  const all = students(lessons), weekdayMinutes = Array(7).fill(0), bySeason = new Map();
+  lessons.forEach(l => {
+    weekdayMinutes[weekdayIndex(l.date)] += l.durationMinutes;
+    const k = seasonOf(l.date, startMonth).startYear;
+    bySeason.set(k, (bySeason.get(k) ?? 0) + l.durationMinutes);
+  });
+  const years = [...bySeason.keys()].sort((a, b) => a - b);
+  const perSeason = years.length ? Array.from({ length: years.at(-1) - years[0] + 1 }, (_, i) => years[0] + i)
+    .map(y => ({ label: seasonLabel({ startYear: y, startMonth }), minutes: bySeason.get(y) ?? 0 })) : [];
+  return {
+    minutes: lessons.reduce((s, l) => s + l.durationMinutes, 0), lessonCount: lessons.length, perSeason,
+    top: all.slice(0, TOP), otherMinutes: all.slice(TOP).reduce((s, x) => s + x.minutes, 0), weekdayMinutes,
   };
 }

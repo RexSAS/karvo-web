@@ -28,3 +28,15 @@ test('season stats: top 4, other, weekdays, months', () => {
   assert.equal(s.minutes, 21 * 60);
   assert.equal(s.lessonCount, 6);
 });
+
+import { lifetimeStats } from '../domain/stats.js';
+test('lifetime: totals over everything, hours per season oldest first, top students and weekdays', () => {
+  const ls = [L(1, '2024-12-07', 'A', 60), L(2, '2025-01-04', 'B', 120), L(3, '2025-12-06', 'A', 180), L(4, '2026-11-07', 'C', 30)];
+  const s = lifetimeStats(ls, 11);
+  assert.equal(s.minutes, 390);
+  assert.equal(s.lessonCount, 4);
+  assert.deepEqual(s.perSeason.map(p => [p.label, p.minutes]), [['2024/25', 180], ['2025/26', 180], ['2026/27', 30]]);
+  assert.equal(s.top[0].name, 'A');
+  assert.equal(s.weekdayMinutes[5], 390); // all Saturdays
+  assert.deepEqual(lifetimeStats([], 11).perSeason, []);
+});

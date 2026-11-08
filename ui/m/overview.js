@@ -3,7 +3,7 @@ import { earningsCents } from '../../domain/earnings.js';
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { paidStatus, monthPaidOn, unpaidTotals } from '../../domain/paid.js';
 import { seasonOf, seasonLabel, seasonMonths } from '../../domain/seasons.js';
-import { seasonStats } from '../../domain/stats.js';
+import { seasonStats, lifetimeStats } from '../../domain/stats.js';
 import { moneyHtml, paintMoney } from '../money.js';
 import { areaChart, donut, columns } from '../stats.js';
 import { esc } from '../html.js';
@@ -11,6 +11,7 @@ import { openSheet } from './sheet.js';
 import { t, locale } from './i18n.js';
 
 let seasonShift = 0; // 0 = the current season; the arrows move it
+let lifetime = false;
 const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
 const monthName = m => new Date(m + '-15').toLocaleString(locale(), { month: 'long', year: 'numeric' });
 
@@ -18,20 +19,21 @@ export function renderOverview(view, state, actions) {
   const { lessons, rateCents, seasonStartMonth } = state.snapshot;
   const now = seasonOf(today(), seasonStartMonth);
   const season = { ...now, startYear: now.startYear + seasonShift };
-  const s = seasonStats(lessons, season), months = seasonMonths(season);
+  const s = lifetime ? lifetimeStats(lessons, seasonStartMonth) : seasonStats(lessons, season), months = seasonMonths(season);
   const unpaid = unpaidTotals(lessons, today(), rateCents);
   const withLessons = months.filter(m => lessons.some(l => monthOf(l.date) === m)).reverse();
   const eye = state.showMoney ? t('hideMoney') : t('showMoney');
   view.innerHTML = `
-    <div class="m-season"><button data-shift="-1" aria-label="◀">◀</button><strong>${esc(t('season', seasonLabel(season)))}</strong>
-      <button data-shift="1" aria-label="▶" ${seasonShift >= 0 ? 'disabled' : ''}>▶</button></div>
+    <div class="m-seg seg" role="group"><button data-life="0" aria-pressed="${!lifetime}">${esc(t('seasonMode'))}</button><button data-life="1" aria-pressed="${lifetime}">${esc(t('lifetime'))}</button></div>
+    ${lifetime ? '' : `<div class="m-season"><button data-shift="-1" aria-label="◀">◀</button><strong>${esc(t('season', seasonLabel(season)))}</strong>
+      <button data-shift="1" aria-label="▶" ${seasonShift >= 0 ? 'disabled' : ''}>▶</button></div>`}
     <div class="m-card"><div class="m-kpis">
       <div><div class="l">${esc(t('hours'))}</div><div class="v">${formatHours(s.minutes)}</div></div>
       <div><div class="l">${esc(t('earned'))}</div><div class="v">${moneyHtml(earningsCents(s.minutes, rateCents))}</div></div>
       <div><div class="l">${esc(t('lessons'))}</div><div class="v">${s.lessonCount}</div></div>
       <div><div class="l">${esc(t('unpaidTotal'))}</div><div class="v gold">${unpaid.minutes ? moneyHtml(unpaid.earningsCents, 'gold') : esc(t('allPaid'))}</div></div>
     </div><div class="row"><button class="btn small" data-eye>${esc(eye)}</button></div></div>
-    <div class="m-card"><h2>${esc(t('months'))}</h2>${withLessons.length ? withLessons.map(m => {
+    ${lifetime ? '' : `<div class="m-card"><h2>${esc(t('months'))}</h2>${withLessons.length ? withLessons.map(m => {
       const ls = lessons.filter(l => monthOf(l.date) === m), st = paidStatus(ls), min = sum(ls);
       const status = st === 'PAID' ? t('paidOn', new Date(monthPaidOn(ls) + 'T12:00').toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))
         : st === 'PARTLY_PAID' ? t('partlyPaid') : t('unpaid');
@@ -39,10 +41,11 @@ export function renderOverview(view, state, actions) {
         <span class="act">${st === 'PAID' ? `<button class="btn small" data-unpay="${m}">${esc(t('markUnpaid'))}</button>`
           : `<button class="btn small gold" data-pay="${m}">${esc(t('markPaid'))}</button>`}</span>
         <span class="sub">${formatHours(min)} · ${moneyHtml(earningsCents(min, rateCents))} · <span class="${st === 'PAID' ? '' : 'gold'}">${esc(status)}</span></span></div>`;
-    }).join('') : `<p class="m-note">${esc(t('noLessonsSeason'))}</p>`}</div>
-    ${s.lessonCount ? `<div class="m-card"><h2>${esc(t('hoursPerMonth'))}</h2><div class="m-chart" data-c="month"></div></div>
+    }).join('') : `<p class="m-note">${esc(t('noLessonsSeason'))}</p>`}</div>`}
+    ${s.lessonCount ? `<div class="m-card"><h2>${esc(t(lifetime ? 'hoursPerSeason' : 'hoursPerMonth'))}</h2><div class="m-chart" data-c="month"></div></div>
     <div class="m-card"><h2>${esc(t('topStudents'))}</h2><div class="m-donut" data-c="donut"></div></div>
     <div class="m-card"><h2>${esc(t('busiestWeekdays'))}</h2><div class="m-chart" data-c="wd"></div></div>` : ''}`;
+  view.querySelectorAll('[data-life]').forEach(b => b.onclick = () => { lifetime = b.dataset.life === '1'; actions.render(); });
   view.querySelectorAll('[data-shift]').forEach(b => b.onclick = () => { seasonShift = Math.min(0, seasonShift + Number(b.dataset.shift)); actions.render(); });
   view.querySelector('[data-eye]').onclick = actions.toggleMoney;
   const failed = () => alert(t('saveFailed'));
@@ -52,8 +55,9 @@ export function renderOverview(view, state, actions) {
   });
   if (s.lessonCount) {
     const cur = monthOf(today());
-    areaChart(view.querySelector('[data-c="month"]'), s.perMonth, cur, { setView: () => {} });
-    donut(view.querySelector('[data-c="donut"]'), s);
+    if (lifetime) areaChart(view.querySelector('[data-c="month"]'), s.perSeason, seasonLabel(now), { setView: () => {} });
+    else areaChart(view.querySelector('[data-c="month"]'), s.perMonth, cur, { setView: () => {} });
+    donut(view.querySelector('[data-c="donut"]'), s, t(lifetime ? 'allTime' : 'thisSeason'));
     columns(view.querySelector('[data-c="wd"]'), s.weekdayMinutes);
   }
   paintMoney(state.showMoney, view);
