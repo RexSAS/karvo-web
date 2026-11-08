@@ -11,7 +11,7 @@ export function addBackup(list, snapshot, reason, at = new Date()) {
 
 const day = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 /** The first phone sync of a day saves the previous copy first (never an empty one). */
-const hasData = s => s.lessons.length > 0 || Object.keys(s.dayNotes ?? {}).length > 0;
+const hasData = s => s.lessons.length > 0 || (s.events ?? []).length > 0;
 export const needsSyncBackup = (list, current, at = new Date()) =>
   hasData(current) && !list.some(b => b.reason === 'sync' && day(new Date(b.createdAt)) === day(at));
 
