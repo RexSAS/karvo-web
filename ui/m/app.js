@@ -6,7 +6,7 @@ import { students } from '../../domain/stats.js';
 import { lessonsToCsv, csvFileBytes, csvFileName } from '../../domain/csv.js';
 import { today } from '../../domain/dates.js';
 import { esc } from '../html.js';
-import { renderLessons, openLessonSheet } from './lessons.js';
+import { renderLessons, openLessonSheet, openNoteSheet } from './lessons.js';
 import { renderOverview } from './overview.js';
 import { renderSettings } from './settings.js';
 import { reminderState, snooze, recordBackup, recordSync } from './backup.js';
@@ -45,6 +45,9 @@ export const actions = {
   edit(lesson) {
     openLessonSheet({ lesson, names: students(state.snapshot.lessons).map(s => s.name),
       onSave: l => state.source.updateLesson(l), onDelete: id => state.source.deleteLesson(id) });
+  },
+  editNote(date) {
+    openNoteSheet({ date, text: date ? state.snapshot.dayNotes?.[date] ?? '' : '', onSave: (d, text) => state.source.setDayNote(d, text) });
   },
   /** CSV through the Share sheet; only a completed share counts as a backup. */
   async backupNow() {
@@ -91,8 +94,9 @@ function render({ keepFocus = false } = {}) {
   const titles = { lessons: t('lessons'), overview: t('overview'), settings: t('settings') };
   screen.querySelector('.m-head h1').textContent = titles[state.tab];
   const banner = screen.querySelector('.m-banner-slot');
-  banner.innerHTML = r.level === 'banner'
-    ? `<div class="m-banner" role="status"><span>${esc(backupLine(r))}</span><button data-backup>${esc(t('backupNow'))}</button></div>` : '';
+  const todayNote = state.snapshot.dayNotes?.[today()];
+  banner.innerHTML = (todayNote ? `<div class="m-banner m-today" role="status"><span>${esc(t('noteToday', todayNote))}</span></div>` : '') + (r.level === 'banner'
+    ? `<div class="m-banner" role="status"><span>${esc(backupLine(r))}</span><button data-backup>${esc(t('backupNow'))}</button></div>` : '');
   banner.querySelector('[data-backup]')?.addEventListener('click', () => actions.backupNow());
   const view = screen.querySelector('.m-view');
   const focused = keepFocus && document.activeElement?.classList.contains('m-search') ? document.activeElement.selectionStart : null;

@@ -2,6 +2,7 @@
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { validateLesson, parseDurationField } from '../../domain/validate.js';
 import { students } from '../../domain/stats.js';
+import { upcomingNotes, MAX_NOTE } from '../../domain/notes.js';
 import { esc } from '../html.js';
 import { openSheet } from './sheet.js';
 import { t, locale } from './i18n.js';
@@ -14,7 +15,11 @@ export function renderLessons(view, { snapshot, search }, actions) {
   const list = snapshot.lessons.filter(l => !q || l.student.toLowerCase().includes(q) || (l.notes ?? '').toLowerCase().includes(q))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   const months = [...new Set(list.map(l => monthOf(l.date)))];
-  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">
+  const notes = upcomingNotes(snapshot.dayNotes, today()).slice(0, 5);
+  const notesCard = q ? '' : `<div class="m-card m-notes"><div class="m-notes-head"><h2>${esc(t('notes'))}</h2><button class="btn small" data-note-new>${esc(t('addNote'))}</button></div>
+    ${notes.length ? notes.map(n => `<button class="m-note-row" data-note="${n.date}"><span class="d">${esc(n.date === today() ? t('today') : dayTitle(n.date))}</span><span>${esc(n.text)}</span></button>`).join('')
+      : `<p class="m-note">${esc(t('noNotes'))}</p>`}</div>`;
+  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${notesCard}
     ${months.length ? months.map(m => {
       const ls = list.filter(l => monthOf(l.date) === m);
       return `<div class="m-month"><span>${esc(monthTitle(m))}</span><span>${formatHours(ls.reduce((s, l) => s + l.durationMinutes, 0))}</span></div>
@@ -23,7 +28,11 @@ export function renderLessons(view, { snapshot, search }, actions) {
     }).join('') : `<div class="m-empty">${esc(t(snapshot.lessons.length ? 'noResults' : 'noLessons'))}</div>`}`;
   const input = view.querySelector('.m-search');
   input.oninput = () => actions.setSearch(input.value);
-  view.onclick = e => { const b = e.target.closest('.m-row'); if (b) actions.edit(snapshot.lessons.find(l => l.id === Number(b.dataset.id))); };
+  view.onclick = e => {
+    const n = e.target.closest('[data-note],[data-note-new]');
+    if (n) return actions.editNote(n.dataset.note ?? null);
+    const b = e.target.closest('.m-row'); if (b) actions.edit(snapshot.lessons.find(l => l.id === Number(b.dataset.id)));
+  };
 }
 
 /** Add or edit one lesson; onSave/onDelete return promises (the sheet stays open with the error if they fail). */
@@ -57,5 +66,22 @@ export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
     if (errors.length) { err.textContent = errors.map(x => t(x)).join(' · '); return; }
     run(() => onSave({ ...(lesson ?? { paidOn: null }), date, student: student.trim(), durationMinutes: h * 60 + m, notes: $('#ml-notes').value.trim() || null }));
   };
+  return s;
+}
+
+/** Add (date = null) or edit one day's note. */
+export function openNoteSheet({ date, text = '', onSave }) {
+  const s = openSheet(`<form novalidate><h3>${esc(t(date ? 'editNote' : 'addNote'))}</h3>
+    <label for="mn-date">${esc(t('date'))}</label><input type="date" id="mn-date" value="${esc(date ?? today())}" ${date ? 'disabled' : ''}>
+    <label for="mn-text">${esc(t('notes'))}</label><textarea id="mn-text" rows="3" maxlength="${MAX_NOTE}" placeholder="${esc(t('notePlaceholder'))}">${esc(text)}</textarea>
+    <p class="m-note">${esc(t('noteHint'))}</p>
+    <div class="err" role="alert"></div>
+    <div class="btns">${text ? `<button type="button" class="btn danger" data-del>${esc(t('delete'))}</button>` : ''}
+      <button type="button" class="btn" data-cancel>${esc(t('cancel'))}</button><button class="btn primary">${esc(t('save'))}</button></div></form>`);
+  const $ = q => s.el.querySelector(q);
+  const run = async (d, v) => { try { await onSave(d, v); s.close(); } catch (e) { $('.err').textContent = e.message; } };
+  $('[data-cancel]').onclick = s.close;
+  $('[data-del]')?.addEventListener('click', () => run(date, null));
+  $('form').onsubmit = e => { e.preventDefault(); const d = $('#mn-date').value; if (!d) { $('.err').textContent = t('pickDate'); return; } run(d, $('#mn-text').value); };
   return s;
 }
