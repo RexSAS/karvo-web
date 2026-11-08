@@ -20,6 +20,7 @@ import { renderOverview } from './ui/overview.js';
 import { renderStats } from './ui/stats.js';
 import { openSettings } from './ui/settings.js';
 import { openLinkDialog } from './ui/link.js';
+import { showPhoneScreen } from './ui/phone.js';
 import { students } from './domain/stats.js';
 
 const APP_VERSION = 'web-2';
@@ -138,6 +139,7 @@ function startLink(record, existing = null) {
 }
 
 async function boot() {
+  if (showPhoneScreen()) return 'phone';
   runSplash();
   if (params.has('demo')) { useSource(createDemoSource()); return; }
   try {
@@ -154,7 +156,9 @@ async function boot() {
   addEventListener('pagehide', () => state.conn?.stop());
 }
 
-await boot();
+if (await boot() !== 'phone') startPcUi();
+
+function startPcUi() {
 addEventListener('resize', render);
 $('settings-btn').onclick = () => openSettings(state.source, () => state.snapshot,
   params.has('demo') ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone });
@@ -167,3 +171,4 @@ document.addEventListener('mousemove', e => {
   tip.textContent = t.dataset.tip;
   Object.assign(tip.style, { display: 'block', left: e.clientX + 12 + 'px', top: e.clientY + 12 + 'px' });
 });
+}

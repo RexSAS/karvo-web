@@ -149,3 +149,10 @@ dialog hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0 6px; }
 .link-dialog .qr .sub { color: #04223A; }
 .link-dialog .btns { justify-content: center; }
 .banner.ok { border-color: var(--primary); color: var(--primary); }
+
+/* Phones: a single centred message instead of the PC layout */
+.phone-page { min-height: 100%; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px 16px; text-align: center; }
+.phone-page h1 { font-size: 24px; margin: 0; }
+.phone-page p { color: var(--muted); max-width: 340px; margin: 0; line-height: 1.5; }
+.phone-page b { color: var(--ink); }
+.phone-page .btn { text-decoration: none; display: inline-block; }
