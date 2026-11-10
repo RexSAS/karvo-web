@@ -44,7 +44,7 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
   el.querySelectorAll('.um').forEach(b => b.onclick = () => actions.setView(b.dataset.m));
 }
 
-function askPaidDate(month, onOk) {
+export function askPaidDate(month, onOk) {
   const d = document.createElement('dialog');
   d.innerHTML = `<form method="dialog"><h3>Mark ${monthName(month)} as paid</h3>
     <label for="p-date">Paid on</label><input type="date" id="p-date" required value="${today()}">

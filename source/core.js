@@ -4,7 +4,7 @@ import { parseLessonsCsv } from '../domain/csv.js';
 import { planImport } from '../domain/importPlan.js';
 import { addEvent, updateEvent, deleteEvent, normalizeEvents, MAX_EVENT } from '../domain/events.js';
 
-export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 11, syncedAt: null, events: [] });
+export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 12, syncedAt: null, events: [] });
 
 // strict (the iPhone, where this is the only copy): a failed save rejects and keeps the previous snapshot.
 function checkEvent({ text }) {

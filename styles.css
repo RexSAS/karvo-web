@@ -74,6 +74,8 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
 .cal-head .pill { width: auto; padding: 0 12px; border-radius: 999px; font-size: 12px; }
 .badge { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--outline); color: var(--muted); }
 .badge.unpaid { border-color: var(--gold); color: var(--gold); }
+.cal-head button.badge { width: auto; height: auto; border-radius: 999px; background: none; }
+.cal-head button.badge:hover { background: var(--s5); }
 .cal-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: auto repeat(6, minmax(0, 1fr)); gap: 6px; }
 .wd { text-align: center; color: var(--muted); font-size: 12px; }
 .cell { min-height: 0; border-radius: 10px; background: var(--s2); border: 1px solid transparent; padding: 4px 8px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }

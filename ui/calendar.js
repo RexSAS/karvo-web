@@ -3,23 +3,24 @@ import { calendarDays, formatHours, addMonths, monthOf, today } from '../domain/
 import { paidStatus } from '../domain/paid.js';
 import { esc } from './html.js';
 import { eventsOn } from '../domain/events.js';
+import { askPaidDate } from './overview.js';
 
 const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const BADGE = { PAID: ['✓ Paid', ''], PARTLY_PAID: ['Partly paid', 'unpaid'], UNPAID: ['€ Unpaid', 'unpaid'] };
 const monthTitle = month => new Date(month + '-15').toLocaleString('en', { month: 'long', year: 'numeric' });
 
-export function renderCalendar(el, { snapshot, view, selDay }, actions) {
+export function renderCalendar(el, { snapshot, view, selDay, source }, actions) {
   const byDay = {};
   snapshot.lessons.forEach(l => { byDay[l.date] = (byDay[l.date] ?? 0) + l.durationMinutes; });
   const max = Math.max(1, ...Object.values(byDay)), now = today();
   const inMonth = snapshot.lessons.filter(l => monthOf(l.date) === view);
-  const [badge, cls] = BADGE[paidStatus(inMonth)];
+  const st = paidStatus(inMonth), [badge, cls] = BADGE[st], canPay = st !== 'PAID' && source?.canEdit;
   el.innerHTML = `<div class="cal-head">
       <button data-go="-1" aria-label="Previous month">◀</button>
       <h3>${monthTitle(view)}</h3>
       <button data-go="1" aria-label="Next month">▶</button>
       <button class="pill" data-today>Today</button>
-      ${inMonth.length ? `<span class="badge ${cls}">${badge}</span>` : ''}
+      ${!inMonth.length ? '' : canPay ? `<button class="badge ${cls}" data-pay title="Mark as paid">${badge}</button>` : `<span class="badge ${cls}">${badge}</span>`}
     </div>
     <div class="cal-grid">${WD.map(w => `<div class="wd">${w}</div>`).join('')}${calendarDays(view).map(d => {
       const min = byDay[d] ?? 0;
@@ -29,6 +30,7 @@ export function renderCalendar(el, { snapshot, view, selDay }, actions) {
         <span class="n">${Number(d.slice(8))}</span><span class="h">${min ? formatHours(min) : ''}</span></button>`;
     }).join('')}</div>`;
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => actions.setView(addMonths(view, Number(b.dataset.go))));
+  el.querySelector('[data-pay]')?.addEventListener('click', () => askPaidDate(view, d => source.markPaid(view, d)));
   el.querySelector('[data-today]').onclick = () => actions.selectDay(now);
   el.querySelector('.cal-grid').onclick = e => { const c = e.target.closest('.cell'); if (c) actions.selectDay(c.dataset.day); };
 }
