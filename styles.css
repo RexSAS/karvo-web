@@ -12,6 +12,8 @@
   --sky: radial-gradient(70vmax 60vmax at 25% 82%, #F08F6E57, transparent 70%), linear-gradient(#060918, #0D1538 42%, #1F2760 74%, #3A3672 90%, #5A4478);
   --ridges: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 270' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='f' x2='0' y2='1'%3E%3Cstop stop-color='%235D62AC'/%3E%3Cstop offset='1' stop-color='%232C3478'/%3E%3C/linearGradient%3E%3ClinearGradient id='m' x2='0' y2='1'%3E%3Cstop stop-color='%232B3579'/%3E%3Cstop offset='1' stop-color='%23161E52'/%3E%3C/linearGradient%3E%3ClinearGradient id='n' x2='0' y2='1'%3E%3Cstop stop-color='%23151D4C'/%3E%3Cstop offset='1' stop-color='%230A1030'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0,270V75L28,50 52,68 88,18 112,46 140,2 176,56 204,30 236,62 270,10 300,46 330,24 360,50V270Z' fill='url(%23f)'/%3E%3Cpath d='M88,18L66,46 84,38ZM140,2L118,35 136,25ZM270,10L248,42 266,32ZM28,50L12,68 25,62Z' fill='%23F6B58E' opacity='.62'/%3E%3Cpath d='M0,270V122L36,88 70,118 110,72 150,124 186,94 226,140 262,100 310,144 360,102V270Z' fill='url(%23m)'/%3E%3Cpath d='M0,270V180L44,152 96,190 150,140 206,196 262,162 312,202 360,174V270Z' fill='url(%23n)'/%3E%3C/svg%3E");
   --ground: #0A1030; /* the foot of the near range: the bottom of every screen */
+  /* Motion, as in the Android app (KarvoMotion): one soft ease-out and three lengths. */
+  --ease: cubic-bezier(.2, .8, .2, 1); --t-short: .25s; --t-med: .45s; --t-long: .65s;
   color-scheme: dark;
 }
 @font-face { font-family: Jost; src: url(fonts/jost.woff2) format("woff2"); font-weight: 300 600; font-display: swap; }
@@ -25,7 +27,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* Splash: the same sunrise as the Android app (drawable/splash_logo_animated.xml), 900 ms, then it fades into the app */
 #splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--sky-bottom); transition: opacity .4s; }
-.sp-logo { position: relative; width: 160px; aspect-ratio: 4 / 3; transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
+.sp-logo { position: relative; width: 160px; aspect-ratio: 4 / 3; transition: transform .4s var(--ease); }
 .sp-logo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #splash.out { opacity: 0; pointer-events: none; }
 #splash.out .sp-logo { transform: scale(1.14); }
@@ -39,6 +41,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   35.5% { stroke-dasharray: .333 1; stroke-dashoffset: 0; } 80.6% { stroke-dasharray: .3 1; stroke-dashoffset: -.7; opacity: 1; }
   100% { stroke-dasharray: 0 1; stroke-dashoffset: -1; opacity: 0; } }
 @keyframes sp-sun { from { transform: translateY(11px); opacity: 0; } 40% { opacity: 1; } }
+/* As the splash leaves (body.ready), the first screen rises in, one part after the other. */
+.ready header, .ready .card, .ready .m-head, .ready .m-view, .ready .m-tabs, .ready .m-fab { animation: up var(--t-long) calc(var(--n, 0) * 60ms) var(--ease) both; }
+#lessons, .m-view { --n: 1; } #calendar, .m-tabs { --n: 2; } #overview, .m-fab { --n: 3; } #stats { --n: 4; }
 
 /* Header and banner */
 header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; flex: none; }
@@ -110,6 +115,11 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
 .kpi:first-of-type { border-bottom: 1px solid; border-image: linear-gradient(90deg, var(--gold), transparent) 1; }
 .kpi:first-of-type .v { font: 300 56px/1 var(--disp); letter-spacing: -.035em; }
 .v small { font-size: .5em; color: var(--muted); }
+/* When the money comes out (body.glint), a glint runs along the horizon line. */
+.kpi:first-of-type, .m-hero .m-kpis > div:first-child { position: relative; }
+.glint .kpi:first-of-type::after, .glint .m-hero .m-kpis > div:first-child::after { content: ""; position: absolute; bottom: -2px; left: 0; width: 80px; height: 2px;
+  background: linear-gradient(90deg, transparent, #FFF0CF, transparent); animation: glint var(--t-long) var(--ease) both; }
+@keyframes glint { to { left: calc(100% - 80px); opacity: 0; } }
 .kpi .sub { color: var(--muted); font-size: 12px; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .gold { color: var(--gold); }
@@ -160,7 +170,7 @@ dialog .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1
 dialog .btns .left { margin-right: auto; }
 dialog hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0 6px; }
 
-@media (prefers-reduced-motion: reduce) { .sp-ghost, .sp-lit, .sp-spark, .sp-sun, .reveal .money, .m-start .up, .m-sheet, .m-sheet > form, .m-sheet > div, .m-sheet.out, .m-sheet.out > form, .m-sheet.out > div, .m-tour, .m-tour .tip, .m-tour .hole::after { animation: none; } .m-tour .hole { transition: none; } #splash, .sp-logo { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .sp-ghost, .sp-lit, .sp-spark, .sp-sun, .ready header, .ready .card, .ready .m-head, .ready .m-view, .ready .m-tabs, .ready .m-fab, .reveal .money, .m-start .up, .m-sheet, .m-sheet > form, .m-sheet > div, .m-sheet.out, .m-sheet.out > form, .m-sheet.out > div, .m-tour, .m-tour .tip, .m-tour .hole::after { animation: none; } .m-tour .hole { transition: none; } #splash, .sp-logo { transition: none; } .glint .kpi:first-of-type::after, .glint .m-hero .m-kpis > div:first-child::after { display: none; } }
 
 /* Link dialog: the QR stays dark-on-white so every phone camera reads it */
 .link-dialog { width: 380px; text-align: center; }
@@ -311,10 +321,10 @@ body.m { overflow: hidden; background: var(--bg); }
 /* Welcome, What's new, quick tour */
 .m-start { text-align: center; }
 .m-kevin { display: block; margin: 4px auto 8px; }
-.m-start .up { animation: up .45s var(--d, 0ms) cubic-bezier(.2, .8, .2, 1) both; }
+.m-start .up { animation: up var(--t-med) var(--d, 0ms) var(--ease) both; }
 @keyframes up { from { opacity: 0; transform: translateY(14px); } }
 .m-sheet { animation: fade .2s both; }
-.m-sheet > form, .m-sheet > div { animation: sheet .32s cubic-bezier(.2, .8, .2, 1) both; }
+.m-sheet > form, .m-sheet > div { animation: sheet .32s var(--ease) both; }
 .m-sheet.out { animation: fadeout .22s both; }
 .m-sheet.out > form, .m-sheet.out > div { animation: sheetout .22s ease-in both; }
 @keyframes fadeout { to { opacity: 0; } }
@@ -325,11 +335,11 @@ body.m { overflow: hidden; background: var(--bg); }
 .m-tour { position: fixed; inset: 0; z-index: 30; animation: fade .25s both; }
 .m-tour.out { opacity: 0; transition: opacity .2s; }
 .m-tour .hole { position: fixed; left: 50%; top: 50%; width: 0; height: 0; border-radius: 16px; box-shadow: 0 0 0 200vmax #000b; pointer-events: none;
-  transition: left .4s cubic-bezier(.2, .8, .2, 1), top .4s cubic-bezier(.2, .8, .2, 1), width .4s cubic-bezier(.2, .8, .2, 1), height .4s cubic-bezier(.2, .8, .2, 1); }
+  transition: left .4s var(--ease), top .4s var(--ease), width .4s var(--ease), height .4s var(--ease); }
 .m-tour .hole::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--gold); animation: ring 1.6s ease-out infinite; }
 @keyframes ring { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.18); } }
 .m-tour .tip { position: fixed; left: 16px; right: 16px; background: var(--s4); border: 1px solid var(--outline); border-radius: 20px; padding: 16px;
-  animation: up .35s .1s cubic-bezier(.2, .8, .2, 1) both; }
+  animation: up .35s .1s var(--ease) both; }
 .m-tour .tip.top { top: calc(16px + env(safe-area-inset-top)); }
 .m-tour .tip.bottom { bottom: calc(16px + env(safe-area-inset-bottom)); }
 .m-tour .tip small { color: var(--muted); }
@@ -362,4 +372,4 @@ body.m { overflow: hidden; background: var(--bg); }
 .m-cal-sub { margin: 14px 0 4px !important; }
 .m-cal-lesson { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .m-cal-lesson:first-of-type { border-top: 0; }
-[data-dayview] { animation: up .3s cubic-bezier(.2, .8, .2, 1) both; }
+[data-dayview] { animation: up .3s var(--ease) both; }

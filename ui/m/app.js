@@ -17,6 +17,7 @@ import { reminderState, snooze, recordBackup, recordSync } from './backup.js';
 import { startLinks } from './links.js';
 import { t, setLang } from './i18n.js';
 import { runSplash } from '../splash.js';
+import { glint } from '../money.js';
 
 const ICONS = {
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
@@ -61,7 +62,7 @@ export const actions = {
   /** A result line in Settings that survives the redraw the change itself causes. */
   flash(text, err = false) { state.flash = { text, err }; render(); },
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
-  toggleMoney() { state.showMoney = !state.showMoney; render(); },
+  toggleMoney() { state.showMoney = !state.showMoney; glint(state.showMoney); render(); },
   add() {
     openLessonSheet({ names: students(state.snapshot.lessons).map(s => s.name), onSave: l => state.source.addLesson(l) });
   },
