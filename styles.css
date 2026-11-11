@@ -285,7 +285,7 @@ body.m { overflow: hidden; background: #0C1530; }
 
 /* Welcome, What's new, quick tour */
 .m-start { text-align: center; }
-.m-logo { width: 120px; display: block; margin: 8px auto 12px; }
+.m-kevin { display: block; margin: 4px auto 8px; }
 .m-start .up { animation: up .45s var(--d, 0ms) cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes up { from { opacity: 0; transform: translateY(14px); } }
 .m-sheet { animation: fade .2s both; }

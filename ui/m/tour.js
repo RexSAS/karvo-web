@@ -3,8 +3,8 @@ import { openSheet } from './sheet.js';
 import { esc } from '../html.js';
 import { t } from './i18n.js';
 
-// The Karvo logo (its gradients are in index.html), with the splash's animation.
-const LOGO = '<svg class="m-logo" viewBox="18 24.5 72 54" aria-label="Karvo"><circle class="sun" cx="33.5" cy="41" r="6.2" fill="#F4C06A"/><path class="m-far" d="M56.6,33.6 L83,75 L63.5,75 C55.5,68.5 54,62.5 60.5,56.5 C68,49.5 66,41.5 56.6,33.6 Z" fill="url(#k-shade)"/><path class="m-near" d="M25,75 L53,28 C61.5,39 62.5,47.5 55,54.5 C48,61 49.5,68 57,75 Z" fill="url(#k-lit)"/></svg>';
+// Kevin, the Karvo penguin, comes out of the snow to say hello (the SVG carries its own small animation).
+const KEVIN = '<img class="m-kevin" src="img/kevin-idle.svg" alt="" width="150" height="145">';
 const up = (html, i) => html.replace(/^<(\w+)/, `<$1 class="up" style="--d:${i * 80}ms"`); // staggered entrance
 
 const num = v => Number(String(v ?? '').replace(/^web-/, '')) || null;
@@ -55,7 +55,7 @@ export function runTour(setTab) {
 }
 
 export function openWelcome(onTour) {
-  const { el, close } = openSheet(`<div class="m-start">${LOGO}${[`<h3>${esc(t('welcomeTitle'))}</h3>`, `<p>${esc(t('welcomeBody'))}</p>`].map((h, i) => up(h, i + 6)).join('')}
+  const { el, close } = openSheet(`<div class="m-start">${KEVIN}${[`<h3>${esc(t('welcomeTitle'))}</h3>`, `<p>${esc(t('welcomeBody'))}</p>`].map((h, i) => up(h, i + 6)).join('')}
     <div class="btns up" style="--d:640ms"><button class="btn" data-skip>${esc(t('tourSkip'))}</button><button class="btn primary" data-tour>${esc(t('welcomeTour'))}</button></div></div>`);
   el.querySelector('[data-skip]').onclick = close;
   el.querySelector('[data-tour]').onclick = () => { close(); onTour(); };
