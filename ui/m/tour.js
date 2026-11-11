@@ -3,8 +3,8 @@ import { openSheet } from './sheet.js';
 import { esc } from '../html.js';
 import { t } from './i18n.js';
 
-// The Karvo logo, with the splash's animation (peaks rise, then the sun pops).
-const LOGO = '<svg class="m-logo" viewBox="20 26 72 54" aria-label="Karvo"><circle class="sun" cx="38" cy="40" r="5" fill="#E8B964"/><path class="m-far" d="M72,48 L86,76 L58,76 Z" fill="#E3F2FD"/><path class="m-near" d="M54,30 L82,76 L26,76 Z" fill="#FFFFFF"/></svg>';
+// The Karvo logo (its gradients are in index.html), with the splash's animation.
+const LOGO = '<svg class="m-logo" viewBox="18 24.5 72 54" aria-label="Karvo"><circle class="sun" cx="33.5" cy="41" r="6.2" fill="#F4C06A"/><path class="m-far" d="M56.6,33.6 L83,75 L63.5,75 C55.5,68.5 54,62.5 60.5,56.5 C68,49.5 66,41.5 56.6,33.6 Z" fill="url(#k-shade)"/><path class="m-near" d="M25,75 L53,28 C61.5,39 62.5,47.5 55,54.5 C48,61 49.5,68 57,75 Z" fill="url(#k-lit)"/></svg>';
 const up = (html, i) => html.replace(/^<(\w+)/, `<$1 class="up" style="--d:${i * 80}ms"`); // staggered entrance
 
 const num = v => Number(String(v ?? '').replace(/^web-/, '')) || null;

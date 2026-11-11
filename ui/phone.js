@@ -8,7 +8,8 @@ export function phoneKind(ua) {
   return null;
 }
 
-const logo = `<svg viewBox="20 26 72 54" width="96" aria-hidden="true"><circle cx="38" cy="40" r="5" fill="#E8B964"/><path d="M72,48 L86,76 L58,76 Z" fill="#E3F2FD"/><path d="M54,30 L82,76 L26,76 Z" fill="#FFFFFF"/></svg>`;
+// These pages replace the whole body (and index.html's logo gradients with it), so this copy carries its own.
+const logo = `<svg viewBox="18 24.5 72 54" width="96" aria-hidden="true"><defs><linearGradient id="k-lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE7BF"/><stop offset=".3" stop-color="#FFF"/><stop offset="1" stop-color="#DCE6F8"/></linearGradient><linearGradient id="k-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9D6FF"/><stop offset="1" stop-color="#5B8DDC"/></linearGradient></defs><circle cx="33.5" cy="41" r="6.2" fill="#F4C06A"/><path d="M56.6,33.6 L83,75 L63.5,75 C55.5,68.5 54,62.5 60.5,56.5 C68,49.5 66,41.5 56.6,33.6 Z" fill="url(#k-shade)"/><path d="M25,75 L53,28 C61.5,39 62.5,47.5 55,54.5 C48,61 49.5,68 57,75 Z" fill="url(#k-lit)"/></svg>`;
 
 /** 'iphone' (Home Screen app) | 'install' (iPhone in Safari) | 'android' | null. */
 export function phoneRoute(ua, standalone) {
