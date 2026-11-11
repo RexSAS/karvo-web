@@ -25,16 +25,16 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-/* Splash: the same sunrise as the Android app (drawable/splash_logo_animated.xml), 900 ms, then it fades into the app */
-#splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--sky-bottom); transition: opacity .4s; }
-.sp-logo { position: relative; width: 160px; aspect-ratio: 4 / 3; transition: transform .4s var(--ease); }
+/* Splash: the same sunrise as the Android app (drawable/splash_logo_animated.xml), 1000 ms, a short hold, then it fades into the app */
+#splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--sky-bottom); transition: opacity .6s; }
+.sp-logo { position: relative; width: 160px; aspect-ratio: 4 / 3; transition: transform .6s var(--ease); }
 .sp-logo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #splash.out { opacity: 0; pointer-events: none; }
 #splash.out .sp-logo { transform: scale(1.14); }
-.sp-ghost { animation: fade .12s both; }
-.sp-lit { animation: sp-reveal .54s .08s cubic-bezier(.4, 0, .2, 1) both; }
-.sp-spark { opacity: 0; animation: sp-spark .62s linear both; }
-.sp-sun { animation: sp-sun .34s .56s cubic-bezier(.3, 1.5, .5, 1) both; }
+.sp-ghost { animation: fade .133s both; }
+.sp-lit { animation: sp-reveal .6s .089s cubic-bezier(.4, 0, .2, 1) both; }
+.sp-spark { opacity: 0; animation: sp-spark .689s linear both; }
+.sp-sun { animation: sp-sun .378s .622s cubic-bezier(.3, 1.5, .5, 1) both; }
 @keyframes sp-reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 @keyframes sp-spark { /* a short gold streak that runs down the carve: dash = end - start, offset = -start (pathLength 1) */
   0%, 12.9% { stroke-dasharray: 0 1; stroke-dashoffset: 0; opacity: 0; } 14% { opacity: 1; }
