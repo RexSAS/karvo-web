@@ -14,16 +14,22 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-/* Splash */
-#splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--sky-bottom); transition: opacity .3s; }
-#splash svg { width: 160px; transition: transform .3s; }
+/* Splash: the same sunrise as the Android app (drawable/splash_logo_animated.xml), 900 ms, then it fades into the app */
+#splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--sky-bottom); transition: opacity .4s; }
+.sp-logo { position: relative; width: 160px; aspect-ratio: 4 / 3; transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
+.sp-logo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #splash.out { opacity: 0; pointer-events: none; }
-#splash.out svg { transform: scale(1.15); }
-.m-far, .m-near { transform-box: fill-box; transform-origin: bottom; animation: rise .5s ease-out both; }
-.m-near { animation-delay: .15s; }
-.sun { transform-box: fill-box; transform-origin: center; animation: pop .3s .5s ease-out both; }
-@keyframes rise { from { transform: scaleY(0); } }
-@keyframes pop { from { transform: scale(0); } }
+#splash.out .sp-logo { transform: scale(1.14); }
+.sp-ghost { animation: fade .12s both; }
+.sp-lit { animation: sp-reveal .54s .08s cubic-bezier(.4, 0, .2, 1) both; }
+.sp-spark { opacity: 0; animation: sp-spark .62s linear both; }
+.sp-sun { animation: sp-sun .34s .56s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes sp-reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
+@keyframes sp-spark { /* a short gold streak that runs down the carve: dash = end - start, offset = -start (pathLength 1) */
+  0%, 12.9% { stroke-dasharray: 0 1; stroke-dashoffset: 0; opacity: 0; } 14% { opacity: 1; }
+  35.5% { stroke-dasharray: .333 1; stroke-dashoffset: 0; } 80.6% { stroke-dasharray: .3 1; stroke-dashoffset: -.7; opacity: 1; }
+  100% { stroke-dasharray: 0 1; stroke-dashoffset: -1; opacity: 0; } }
+@keyframes sp-sun { from { transform: translateY(11px); opacity: 0; } 40% { opacity: 1; } }
 
 /* Header and banner */
 header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; flex: none; }
@@ -141,7 +147,7 @@ dialog .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1
 dialog .btns .left { margin-right: auto; }
 dialog hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0 6px; }
 
-@media (prefers-reduced-motion: reduce) { .m-far, .m-near, .sun, .reveal .money, .m-start .up, .m-sheet, .m-sheet > form, .m-sheet > div, .m-sheet.out, .m-sheet.out > form, .m-sheet.out > div, .m-tour, .m-tour .tip, .m-tour .hole::after { animation: none; } .m-tour .hole { transition: none; } #splash, #splash svg { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .sp-ghost, .sp-lit, .sp-spark, .sp-sun, .reveal .money, .m-start .up, .m-sheet, .m-sheet > form, .m-sheet > div, .m-sheet.out, .m-sheet.out > form, .m-sheet.out > div, .m-tour, .m-tour .tip, .m-tour .hole::after { animation: none; } .m-tour .hole { transition: none; } #splash, .sp-logo { transition: none; } }
 
 /* Link dialog: the QR stays dark-on-white so every phone camera reads it */
 .link-dialog { width: 380px; text-align: center; }
