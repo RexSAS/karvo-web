@@ -26,7 +26,9 @@ export function renderLessons(view, { snapshot, search }, actions) {
       return `<div class="m-month"><span>${esc(monthTitle(m))}</span><span>${formatHours(ls.reduce((s, l) => s + l.durationMinutes, 0))}</span></div>
         ${ls.map(l => `<button class="m-row" data-id="${l.id}"><span class="who">${esc(l.student)}</span><span class="dur">${formatHours(l.durationMinutes)}</span>
           <span class="when">${esc(dayTitle(l.date))}</span>${l.notes ? `<span class="note">${esc(l.notes)}</span>` : ''}</button>`).join('')}`;
-    }).join('') : `<div class="m-empty">${esc(t(snapshot.lessons.length ? 'noResults' : 'noLessons'))}</div>`}`;
+    }).join('') : snapshot.lessons.length ? `<div class="m-empty">${esc(t('noResults'))}</div>`
+      // No lessons at all: Kevin asleep in the snow (the SVG carries its own small animation).
+      : `<div class="m-empty"><img class="kevin" src="img/kevin-sleepy.svg" alt="" width="200" height="193">${esc(t('noLessons'))}</div>`}`;
   const input = view.querySelector('.m-search');
   input.oninput = () => actions.setSearch(input.value);
   view.onclick = e => {

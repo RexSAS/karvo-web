@@ -220,7 +220,7 @@ body.m { overflow: hidden; background: var(--bg); }
 .m-row .who { font-size: 16px; font-weight: 600; }
 .m-row .dur { font: 500 17px/1.2 var(--disp); font-variant-numeric: tabular-nums; }
 .m-row .when, .m-row .note { color: var(--muted); font-size: 13px; grid-column: 1 / -1; }
-.m-empty { color: var(--muted); text-align: center; padding: 48px 16px; }
+.m-empty { color: var(--muted); text-align: center; padding: 24px 16px; }
 .m-card { border-radius: 24px; background: var(--glass); border: 1px solid #FFFFFF1F; padding: 16px; margin-bottom: 12px; }
 /* The season's hours are the hero: large and light, straight on the sky, on a thin gold horizon line. */
 .m-hero { background: none; border: 0; padding: 4px 4px 0; }
@@ -320,7 +320,7 @@ body.m { overflow: hidden; background: var(--bg); }
 
 /* Welcome, What's new, quick tour */
 .m-start { text-align: center; }
-.m-kevin { display: block; margin: 4px auto 8px; }
+.m-kevin, .kevin { display: block; margin: 4px auto 8px; }
 .m-start .up { animation: up var(--t-med) var(--d, 0ms) var(--ease) both; }
 @keyframes up { from { opacity: 0; transform: translateY(14px); } }
 .m-sheet { animation: fade .2s both; }
