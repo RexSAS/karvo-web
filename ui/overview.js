@@ -28,7 +28,7 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
     : `<button class="btn small gold" data-pay ${ro}>Mark paid</button>`;
   el.innerHTML = `<h2>Overview · ${monthName(view, { month: 'short', year: 'numeric' })}</h2>
     <div class="scroll">
-      <div class="kpi"><div class="l">Hours</div><div class="v">${formatHours(minutes)}</div></div>
+      <div class="kpi"><div class="l">Hours</div><div class="v">${formatHours(minutes).replace(/ (h|min)/g, '<small> $1</small>')}</div></div>
       <div class="kpi"><div class="l">Earned</div><div class="row"><span class="v">${moneyHtml(earningsCents(minutes, rateCents))}</span>
         <button class="icon-btn" data-eye aria-pressed="${showMoney}" aria-label="${showMoney ? 'Hide' : 'Show'} money" title="${showMoney ? 'Hide' : 'Show'} money">${showMoney ? EYE_OFF : EYE}</button></div></div>
       <div class="kpi"><div class="l">This month</div><div class="row">${status(inMonth)}</div></div>

@@ -43,7 +43,7 @@ export function areaChart(el, perMonth, cur, actions) {
     ${perMonth.map((p, i) => `<g class="hit" ${p.month ? `data-m="${p.month}"` : ''} data-tip="${p.month ? `${mName(p.month)} ${p.month.slice(0, 4)}` : p.label}: ${formatHours(p.minutes)}">
       <rect x="${x(i) - W / n / 2}" y="0" width="${W / n}" height="${H}" fill="transparent"/>
       <line class="cross" x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${B}"/>
-      ${i < shown ? `<circle cx="${x(i)}" cy="${y(p.minutes)}" r="${i === ci ? 6 : 4}" fill="${i === ci ? 'var(--primary)' : 'var(--s2)'}" stroke="var(--primary)" stroke-width="2"/>` : ''}
+      ${i < shown ? `<circle cx="${x(i)}" cy="${y(p.minutes)}" r="${i === ci ? 6 : 4}" fill="${i === ci ? 'var(--gold)' : 'var(--s2)'}" stroke="${i === ci ? 'var(--gold)' : 'var(--primary)'}" stroke-width="2"/>` : ''}
       <text x="${x(i)}" y="${H - 2}" text-anchor="middle">${label(p)}</text></g>`).join('')}
     ${ci >= 0 && ci < shown ? `<text class="val" x="${x(ci)}" y="${y(perMonth[ci].minutes) - 12}" text-anchor="middle">${formatHours(perMonth[ci].minutes)}</text>` : ''}</svg>`;
   el.onclick = e => { const g = e.target.closest('[data-m]'); if (g) actions.setView(g.dataset.m); };

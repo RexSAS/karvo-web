@@ -27,8 +27,8 @@ export function renderOverview(view, state, actions) {
     <div class="m-seg seg" role="group"><button data-life="0" aria-pressed="${!lifetime}">${esc(t('seasonMode'))}</button><button data-life="1" aria-pressed="${lifetime}">${esc(t('lifetime'))}</button></div>
     ${lifetime ? '' : `<div class="m-season"><button data-shift="-1" aria-label="◀">◀</button><strong>${esc(t('season', seasonLabel(season)))}</strong>
       <button data-shift="1" aria-label="▶" ${seasonShift >= 0 ? 'disabled' : ''}>▶</button></div>`}
-    <div class="m-card"><div class="m-kpis">
-      <div><div class="l">${esc(t('hours'))}</div><div class="v">${formatHours(s.minutes)}</div></div>
+    <div class="m-card m-hero"><div class="m-kpis">
+      <div><div class="l">${esc(t('hours'))}</div><div class="v">${formatHours(s.minutes).replace(/ (h|min)/g, '<small> $1</small>')}</div></div>
       <div><div class="l">${esc(t('earned'))}</div><div class="v">${moneyHtml(earningsCents(s.minutes, rateCents))}</div></div>
       <div><div class="l">${esc(t('lessons'))}</div><div class="v">${s.lessonCount}</div></div>
       <div><div class="l">${esc(t('unpaidTotal'))}</div><div class="v gold">${unpaid.minutes ? moneyHtml(unpaid.earningsCents, 'gold') : esc(t('allPaid'))}</div></div>
