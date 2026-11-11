@@ -17,6 +17,7 @@ import { reminderState, snooze, recordBackup, recordSync } from './backup.js';
 import { startLinks } from './links.js';
 import { t, setLang } from './i18n.js';
 import { runSplash } from '../splash.js';
+import { glint } from '../money.js';
 
 const ICONS = {
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
@@ -26,23 +27,16 @@ const ICONS = {
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
 };
 
-// Android's Alpine Night backdrop: fixed stars, a far and a near ridge, faint snowflakes on Settings (decorative only).
+// The backdrop's stars and, on Settings, faint snowflakes (decorative only). The sky and the ridges are CSS (--sky, --ridges).
 const STARS = [[.08,.04,.9],[.20,.12,.7],[.33,.07,.5],[.41,.27,.6],[.52,.03,.8],[.61,.18,.5],[.70,.08,.9],[.78,.30,.6],[.86,.14,1],[.93,.40,.7],
   [.12,.32,.5],[.27,.22,.6],[.47,.15,.4],[.57,.34,.5],[.66,.42,.4],[.83,.05,.5],[.03,.19,.6],[.37,.38,.4],[.74,.24,.7],[.96,.09,.5]];
-const FAR = [[0,.55],[.12,.35],[.22,.5],[.38,.12],[.52,.45],[.64,.28],[.78,.55],[.9,.22],[1,.4]];
-const NEAR = [[0,.82],[.15,.6],[.28,.76],[.45,.5],[.6,.78],[.75,.62],[.88,.8],[1,.7]];
 const FLAKE = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22z"/></svg>';
-const ridge = pts => `M0,100 ${pts.map(([x, y]) => `L${x * 100},${y * 100}`).join(' ')} L100,100 Z`;
 function backdrop() {
   const el = document.createElement('div');
   el.className = 'm-backdrop';
   el.setAttribute('aria-hidden', 'true');
   el.innerHTML = `<svg class="stars" viewBox="0 0 100 100" preserveAspectRatio="none">${STARS.map(([x, y, a], i) =>
     `<ellipse cx="${x * 100}" cy="${y * 100}" rx="${i % 3 ? .28 : .4}" ry="${i % 3 ? .13 : .19}" fill="#fff" opacity="${a}"/>`).join('')}</svg>
-    <svg class="ridges" viewBox="0 0 100 100" preserveAspectRatio="none"><defs>
-      <linearGradient id="bd-far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D5AA8" stop-opacity=".45"/><stop offset="1" stop-color="#3D5AA8" stop-opacity="0"/></linearGradient>
-      <linearGradient id="bd-near" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9F0FF" stop-opacity=".28"/><stop offset=".3" stop-color="#4F69B8" stop-opacity=".45"/><stop offset="1" stop-color="#0C1530"/></linearGradient></defs>
-      <path d="${ridge(FAR)}" fill="url(#bd-far)"/><path d="${ridge(NEAR)}" fill="url(#bd-near)"/></svg>
     <i class="flake f1">${FLAKE}</i><i class="flake f2">${FLAKE}</i><i class="flake f3">${FLAKE}</i>`;
   return el;
 }
@@ -68,7 +62,7 @@ export const actions = {
   /** A result line in Settings that survives the redraw the change itself causes. */
   flash(text, err = false) { state.flash = { text, err }; render(); },
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
-  toggleMoney() { state.showMoney = !state.showMoney; render(); },
+  toggleMoney() { state.showMoney = !state.showMoney; glint(state.showMoney); render(); },
   add() {
     openLessonSheet({ names: students(state.snapshot.lessons).map(s => s.name), onSave: l => state.source.addLesson(l) });
   },

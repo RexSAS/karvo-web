@@ -17,3 +17,10 @@ export function paintMoney(show, root = document) {
     e.setAttribute('aria-label', visible ? v : 'Amount hidden');
   });
 }
+
+/** When the money comes out, a glint runs along the gold horizon line (styles.css, body.glint), as in the Android app. */
+export function glint(show) {
+  if (!show) return;
+  document.body.classList.add('glint');
+  setTimeout(() => document.body.classList.remove('glint'), 700);
+}

@@ -3,8 +3,8 @@ import { openSheet } from './sheet.js';
 import { esc } from '../html.js';
 import { t } from './i18n.js';
 
-// The Karvo logo, with the splash's animation (peaks rise, then the sun pops).
-const LOGO = '<svg class="m-logo" viewBox="20 26 72 54" aria-label="Karvo"><circle class="sun" cx="38" cy="40" r="5" fill="#E8B964"/><path class="m-far" d="M72,48 L86,76 L58,76 Z" fill="#E3F2FD"/><path class="m-near" d="M54,30 L82,76 L26,76 Z" fill="#FFFFFF"/></svg>';
+// Kevin, the Karvo penguin, comes out of the snow to say hello (the SVG carries its own small animation).
+const KEVIN = '<img class="m-kevin" src="img/kevin-idle.svg" alt="" width="150" height="145">';
 const up = (html, i) => html.replace(/^<(\w+)/, `<$1 class="up" style="--d:${i * 80}ms"`); // staggered entrance
 
 const num = v => Number(String(v ?? '').replace(/^web-/, '')) || null;
@@ -55,7 +55,7 @@ export function runTour(setTab) {
 }
 
 export function openWelcome(onTour) {
-  const { el, close } = openSheet(`<div class="m-start">${LOGO}${[`<h3>${esc(t('welcomeTitle'))}</h3>`, `<p>${esc(t('welcomeBody'))}</p>`].map((h, i) => up(h, i + 6)).join('')}
+  const { el, close } = openSheet(`<div class="m-start">${KEVIN}${[`<h3>${esc(t('welcomeTitle'))}</h3>`, `<p>${esc(t('welcomeBody'))}</p>`].map((h, i) => up(h, i + 6)).join('')}
     <div class="btns up" style="--d:640ms"><button class="btn" data-skip>${esc(t('tourSkip'))}</button><button class="btn primary" data-tour>${esc(t('welcomeTour'))}</button></div></div>`);
   el.querySelector('[data-skip]').onclick = close;
   el.querySelector('[data-tour]').onclick = () => { close(); onTour(); };

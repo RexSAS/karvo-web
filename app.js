@@ -12,7 +12,7 @@ import { monthOf, today } from './domain/dates.js';
 import { runSplash } from './ui/splash.js';
 import { renderBanner } from './ui/banner.js';
 import { renderEmpty } from './ui/empty.js';
-import { paintMoney } from './ui/money.js';
+import { paintMoney, glint } from './ui/money.js';
 import { pickTextFile } from './ui/files.js';
 import { renderCalendar } from './ui/calendar.js';
 import { renderLessons } from './ui/lessons.js';
@@ -49,6 +49,7 @@ export const actions = {
   toggleMoney() {
     state.showMoney = !state.showMoney;
     document.body.classList.add('reveal');
+    glint(state.showMoney);
     render();
     setTimeout(() => document.body.classList.remove('reveal'), 300);
   },
