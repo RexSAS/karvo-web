@@ -44,7 +44,7 @@ export const STRINGS = {
     tourSettingsTitle: 'Make it yours', tourSettingsBody: 'Set your hourly rate, when the season starts and the language.',
     tourBackupTitle: 'Backups', tourBackupBody: 'Your lessons live only on this iPhone. Back up every few days: save the CSV to Files or send it to yourself.',
     tourPcTitle: 'Use Karvo on your PC', tourPcBody: 'Open karvo.rxsas.it on your computer and link it here by scanning the code.',
-    whatsNewTitle: 'What’s new in %1', whatsNewItems: 'Events: several per day, with the next 3 days on Lessons and every day in the new Calendar (icon at the top).|Overview: switch between this season and lifetime statistics.|A quick tour of the app, any time from Settings.',
+    whatsNewTitle: 'What’s new in %1', whatsNewItems: 'A new look: the sky at first light over the mountains, a new logo and a new app icon.|Meet Kevin, the Karvo penguin. He sleeps in the snow where there is nothing yet.|Clearer numbers and a calmer tab bar.',
   },
   it: {
     lessons: 'Lezioni', overview: 'Panoramica', settings: 'Impostazioni',
@@ -89,7 +89,7 @@ export const STRINGS = {
     tourSettingsTitle: 'Personalizzala', tourSettingsBody: 'Imposta tariffa oraria, inizio stagione e lingua.',
     tourBackupTitle: 'Backup', tourBackupBody: 'Le lezioni sono solo su questo iPhone. Fai un backup ogni pochi giorni: salva il CSV su File o mandalo a te stesso.',
     tourPcTitle: 'Usa Karvo sul PC', tourPcBody: 'Apri karvo.rxsas.it sul computer e collegalo da qui scansionando il codice.',
-    whatsNewTitle: 'Novità della %1', whatsNewItems: 'Eventi: più eventi al giorno, con i prossimi 3 giorni in Lezioni e tutti i giorni nel nuovo Calendario (icona in alto).|Panoramica: scegli tra statistiche della stagione e di sempre.|Un tour veloce dell’app, quando vuoi dalle Impostazioni.',
+    whatsNewTitle: 'Novità della %1', whatsNewItems: 'Un nuovo look: il cielo all’alba sopra le montagne, un nuovo logo e una nuova icona.|Ecco Kevin, il pinguino di Karvo. Dorme nella neve dove non c’è ancora niente.|Numeri più chiari e una barra delle schede più pulita.',
   },
 };
 
