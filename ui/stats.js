@@ -37,7 +37,7 @@ export function areaChart(el, perMonth, cur, actions) {
   const mx = Math.max(1, ...perMonth.map(p => p.minutes)), x = i => W * (i + .5) / n, y = v => B - (B - T) * v / mx;
   const line = perMonth.slice(0, shown).map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.minutes)}`).join('');
   const ci = perMonth.findIndex(p => key(p) === cur);
-  el.innerHTML = `<svg><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC4FA" stop-opacity=".35"/><stop offset="1" stop-color="#7CC4FA" stop-opacity="0"/></linearGradient></defs>
+  el.innerHTML = `<svg><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8CCBFF" stop-opacity=".35"/><stop offset="1" stop-color="#8CCBFF" stop-opacity="0"/></linearGradient></defs>
     <line x1="0" x2="${W}" y1="${B}" y2="${B}" stroke="var(--line)"/>
     ${shown ? `<path d="${line}L${x(shown - 1)},${B}L${x(0)},${B}Z" fill="url(#ag)"/><path d="${line}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>` : ''}
     ${perMonth.map((p, i) => `<g class="hit" ${p.month ? `data-m="${p.month}"` : ''} data-tip="${p.month ? `${mName(p.month)} ${p.month.slice(0, 4)}` : p.label}: ${formatHours(p.minutes)}">
