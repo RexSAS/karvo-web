@@ -89,3 +89,14 @@ test('browsers may call the relay from the web app (CORS for GET and DELETE)', a
   assert.equal(miss.status, 404);
   assert.equal(miss.headers.get('access-control-allow-origin'), '*');
 });
+
+test('report: bad input is 400, a valid report without GITHUB_TOKEN is 503, POST passes CORS', async () => {
+  const post = body => fetch(`${http()}/report`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  assert.equal((await post('not json')).status, 400);
+  assert.equal((await post(JSON.stringify({ title: 'x', text: 'hi' }))).status, 400); // title too short
+  assert.equal((await post(JSON.stringify({ title: 'Crash', text: 'y'.repeat(4001) }))).status, 400);
+  if (!process.env.RELAY) assert.equal((await post(JSON.stringify({ title: 'Crash on save', text: 'It closed', app: 'Karvo 3.7', device: 'Pixel' }))).status, 503);
+  const pre = await fetch(`${http()}/report`, { method: 'OPTIONS' });
+  assert.match(pre.headers.get('access-control-allow-methods'), /POST/);
+  assert.match(pre.headers.get('access-control-allow-headers'), /Content-Type/);
+});

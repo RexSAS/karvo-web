@@ -8,6 +8,16 @@ routes = [{ pattern = "link.rxsas.it", custom_domain = true }]
 name = "ROOM"
 class_name = "Room"
 
+[[durable_objects.bindings]]
+name = "REPORTS"
+class_name = "Reports"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Reports"]
+
+# Secret (not in this file): `npx wrangler secret put GITHUB_TOKEN`, fine-grained, Issues: read+write on RexSAS/Karvo only.

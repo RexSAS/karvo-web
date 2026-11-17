@@ -1,7 +1,24 @@
 // Settings: hourly rate, season start, CSV import/export, and deleting this PC's backup.
 import { parseRateCents, formatRateText } from '../domain/rate.js';
 import { pickTextFile, downloadCsv } from './files.js';
-import { esc, reportMailto } from './html.js';
+import { esc } from './html.js';
+import { reportFormHtml, wireReport } from './report.js';
+import { STRINGS } from './m/i18n.js';
+import { APP_VERSION } from './m/settings.js';
+
+// The PC is English-only: same texts as the iPhone's English.
+const tEn = (key, ...args) => (STRINGS.en[key] ?? key).replace(/%(\d)/g, (_, i) => args[i - 1] ?? '');
+
+function openReportDialog() {
+  const d = document.createElement('dialog');
+  d.style.width = '460px';
+  d.innerHTML = reportFormHtml(tEn);
+  document.body.append(d);
+  const close = () => { d.close(); d.remove(); };
+  d.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  d.showModal();
+  wireReport(d, tEn, `${APP_VERSION} PC`, close);
+}
 import { loadBackups, saveBackup, MAX_BACKUPS } from '../source/pcBackups.js';
 
 const REASONS = { manual: 'Manual', sync: 'Before sync', import: 'Before import', restore: 'Before restore' };
@@ -35,12 +52,13 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
     <div class="btns" style="justify-content:flex-start;margin-top:4px"><button type="button" class="btn small" data-backup-now ${snapshot.lessons.length || (snapshot.events ?? []).length ? '' : 'disabled'}>Back up now</button></div>` : ''}
     ${source.status === 'backup' && snapshot.lessons.length ? '<hr><button type="button" class="btn small danger" data-wipe>Delete lessons from this PC</button>' : ''}
     <hr><label>Something wrong, or an idea?</label>
-    <div class="btns" style="justify-content:flex-start;margin-top:4px"><a class="btn small" href="${esc(reportMailto('Karvo – Report a problem', 'What happened? (what you clicked, what you expected)', 'PC'))}">Report a problem</a></div>
+    <div class="btns" style="justify-content:flex-start;margin-top:4px"><button type="button" class="btn small" data-report>Report a problem</button></div>
   </form>`;
   document.body.append(d);
   const $ = s => d.querySelector(s), close = () => { d.close(); d.remove(); };
   const say = (text, isErr) => { $('[data-msg]').textContent = isErr ? '' : text; $('[data-err]').textContent = isErr ? text : ''; };
   $('[data-cancel]').onclick = close;
+  $('[data-report]').onclick = () => { close(); openReportDialog(); };
   d.addEventListener('cancel', e => { e.preventDefault(); close(); });
   $('form').onsubmit = async e => {
     e.preventDefault();
