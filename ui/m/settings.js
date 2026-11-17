@@ -4,7 +4,7 @@ import { reminderState } from './backup.js';
 import { renderLinks } from './links.js';
 import { pickTextFile } from '../files.js';
 import { esc } from '../html.js';
-import { reportFormHtml, wireReport } from '../report.js';
+import { reportFormHtml, wireReport, showMyReports } from '../report.js';
 import { openSheet } from './sheet.js';
 import { t, getLang, locale } from './i18n.js';
 
@@ -33,7 +33,7 @@ export function renderSettings(view, state, actions) {
       <div class="${state.flash?.err ? 'm-err' : 'm-ok'}" data-msg role="status">${esc(state.flash?.text ?? '')}</div>
     </div>
     <div class="m-card" data-links></div>
-    <div class="m-card"><button class="btn" data-report>${esc(t('reportProblem'))}</button>
+    <div class="m-card"><div class="row"><button class="btn" data-report>${esc(t('reportProblem'))}</button><button class="btn" data-my-reports>${esc(t('myReports'))}</button></div>
       <p class="m-note">${esc(t('reportProblemHint'))}</p></div>
     <div class="m-card"><button class="btn" data-tour>${esc(t('tourAgain'))}</button>
       <div class="m-about"><a class="m-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">${esc(t('privacy'))}</a>
@@ -55,5 +55,6 @@ export function renderSettings(view, state, actions) {
   };
   $('[data-tour]').onclick = () => actions.tour();
   $('[data-report]').onclick = () => { const s = openSheet(reportFormHtml(t)); wireReport(s.el, t, `${APP_VERSION} iPhone`, s.close); };
+  $('[data-my-reports]').onclick = () => { const s = openSheet('<form novalidate></form>'); showMyReports(s.el, t, s.close); };
   renderLinks($('[data-links]'), state, actions);
 }

@@ -26,7 +26,8 @@ async function reportStatus(n) {
   return { open: issue.state === 'open', replies: comments.map(c => ({ author: c.user.login === 'RexSAS' ? 'Karvo' : c.user.login, body: c.body, date: c.created_at.slice(0, 10) })) };
 }
 
-async function showMyReports(root, t, close) {
+/** root must contain a <form>: it is replaced by the list. */
+export async function showMyReports(root, t, close) {
   const list = sentReports().slice(0, 10);
   const form = root.querySelector('form');
   form.innerHTML = `<h3>${esc(t('myReports'))}</h3>
