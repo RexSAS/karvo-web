@@ -20,7 +20,7 @@ const withCors = r => {
 // "Report a problem" from the apps: becomes a GitHub issue. GITHUB_TOKEN is a secret (fine-grained, Issues: write on
 // this one repo only), so it never ships in an app.
 const REPORT_REPO = 'RexSAS/Karvo';
-const PER_IP_HOUR = 5, PER_DAY = 50;
+const PER_IP_HOUR = 10, PER_DAY = 100;
 const LIMITS = { title: [3, 120], text: [1, 4000], app: [0, 100], device: [0, 200] };
 // Reports are public: a "@name" would notify that GitHub user, so break mentions with a zero-width space.
 const noMention = s => s.replace(/@/g, '@​');
@@ -123,7 +123,7 @@ export class Room extends DurableObject {
   }
 }
 
-/** One instance ("all") counts reports: 5 per hour per sender, 50 a day in total. Keeps only IP hashes, for 24 hours. */
+/** One instance ("all") counts reports: 10 per hour per sender, 100 a day in total. Keeps only IP hashes, for 24 hours. */
 export class Reports extends DurableObject {
   async allow(ip) {
     const now = Date.now(), hour = 3600_000;

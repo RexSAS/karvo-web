@@ -6,7 +6,7 @@ const ENDPOINT = 'https://link.rxsas.it/report';
 
 export async function sendReport(report) {
   const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(report) });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
   return (await r.json()).number;
 }
 
@@ -84,8 +84,8 @@ export function wireReport(root, t, version, close) {
         <div class="btns"><button type="button" class="btn" data-mine>${esc(t('myReports'))}</button><button type="button" class="btn primary" data-cancel>${esc(t('close'))}</button></div>`;
       $('[data-cancel]').onclick = close;
       $('[data-mine]').onclick = () => showMyReports(root, t, close);
-    } catch {
-      err.textContent = t('reportFailed');
+    } catch (e) {
+      err.textContent = t(e.status === 429 ? 'reportTooMany' : 'reportFailed');
       send.disabled = false; send.textContent = t('send');
     }
   };
