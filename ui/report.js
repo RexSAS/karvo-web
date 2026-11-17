@@ -15,19 +15,16 @@ const KEY = 'karvo.reports';
 export const sentReports = () => { try { return JSON.parse(localStorage.getItem(KEY)) ?? []; } catch { return []; } };
 const rememberReport = r => { try { localStorage.setItem(KEY, JSON.stringify([r, ...sentReports()])); } catch {} };
 
-/** Public repo, so no token: { open, replies: [{ author, body, date }] }. */
+/** Read through the relay (fresh, and not GitHub's 60 anonymous reads an hour per connection): { open, replies }. */
 async function reportStatus(n, t) {
-  const get = async path => {
-    const r = await fetch(`https://api.github.com/repos/RexSAS/Karvo/issues/${n}${path}`, { headers: { Accept: 'application/vnd.github+json' } });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
-  };
-  const [issue, comments] = await Promise.all([get(''), get('/comments')]);
+  const r = await fetch(`${ENDPOINT}/${n}`, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const { open, comments } = await r.json();
   // The reporter's comments from the Android app end with this line (posted with the same token as the answers).
   const MARK = '_Reply from the reporter in Karvo._';
-  return { open: issue.state === 'open', replies: comments.map(c => {
+  return { open, replies: comments.map(c => {
     const body = c.body.trim(), mine = body.endsWith(MARK);
-    return { author: mine ? t('reportYou') : c.user.login === 'RexSAS' ? 'Karvo' : c.user.login, body: mine ? body.slice(0, -MARK.length).trim() : body, date: c.created_at.slice(0, 10) };
+    return { author: mine ? t('reportYou') : c.author === 'RexSAS' ? 'Karvo' : c.author, body: mine ? body.slice(0, -MARK.length).trim() : body, date: c.date };
   }) };
 }
 

@@ -100,6 +100,8 @@ test('report: bad input is 400, a valid report without GITHUB_TOKEN is 503, POST
   assert.equal((await comment(1, JSON.stringify({ text: 'more info' }))).status, 400); // no key
   assert.equal((await comment(1, JSON.stringify({ text: '', key: 'A'.repeat(22) }))).status, 400);
   if (!process.env.RELAY) assert.equal((await comment(1, JSON.stringify({ text: 'more info', key: 'A'.repeat(22) }))).status, 503);
+  if (!process.env.RELAY) assert.equal((await fetch(`${http()}/report/1`)).status, 503);
+  assert.equal((await fetch(`${http()}/report/1`, { method: 'DELETE' })).status, 405);
   const pre = await fetch(`${http()}/report`, { method: 'OPTIONS' });
   assert.match(pre.headers.get('access-control-allow-methods'), /POST/);
   assert.match(pre.headers.get('access-control-allow-headers'), /Content-Type/);

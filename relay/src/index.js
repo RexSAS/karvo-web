@@ -84,6 +84,25 @@ async function comment(request, env, number) {
   return new Response(null, { status: 204 });
 }
 
+// Status and answers of one report, read with the token: fresh (anonymous GitHub reads can be a minute old) and not
+// limited to 60 an hour per connection (instructors on one ski-school Wi-Fi share that).
+// shortcut: no per-sender limit on reads (public data, 5000/hour token budget); add one if someone hammers it.
+async function status(request, env, number) {
+  if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+  if (!env.GITHUB_TOKEN) return new Response('Reports not configured', { status: 503 });
+  const get = path => fetch(`https://api.github.com/repos/${REPORT_REPO}/issues/${number}${path}`, {
+    headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'karvo-link' },
+  });
+  const [issue, comments] = await Promise.all([get(''), get('/comments?per_page=100')]);
+  if (issue.status === 404) return new Response('Unknown report', { status: 404 });
+  if (!issue.ok || !comments.ok) return new Response('GitHub error', { status: 502 });
+  const i = await issue.json(), list = await comments.json();
+  return Response.json(
+    { open: i.state === 'open', comments: list.map(c => ({ author: c.user.login, body: c.body, date: c.created_at.slice(0, 10) })) },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
@@ -91,6 +110,8 @@ export default {
     if (path === '/report') return withCors(await report(request, env));
     const c = path.match(/^\/report\/(\d{1,9})\/comment$/);
     if (c) return withCors(await comment(request, env, Number(c[1])));
+    const s = path.match(/^\/report\/(\d{1,9})$/);
+    if (s) return withCors(await status(request, env, Number(s[1])));
     const m = path.match(/^\/room\/([A-Za-z0-9_-]{22})$/);
     if (!m) return withCors(new Response('Not found', { status: 404 }));
     return withCors(await env.ROOM.get(env.ROOM.idFromName(m[1])).fetch(request));
