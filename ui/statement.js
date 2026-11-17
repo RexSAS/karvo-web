@@ -17,8 +17,8 @@ export function statementHtml(state) {
   const money = cents => cents == null ? '' : `<td class="num">${formatEuro(cents)}</td>`;
   return `<h1>Karvo · Lesson statement</h1><p class="sub">${esc(what)}${ls.length ? ` · ${day(ls[0].date)} – ${day(ls.at(-1).date)}` : ''}</p>
     <table><thead><tr><th>Date</th><th>Student</th><th class="num">Hours</th>${rateCents == null ? '' : '<th class="num">Amount</th>'}<th>Paid</th></tr></thead>
-    <tbody>${ls.map((l, i) => `<tr${i && l.date !== ls[i - 1].date ? ' class="newday"' : ''}><td>${day(l.date)}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(earningsCents(l.durationMinutes, rateCents))}<td>${l.paidOn ? day(l.paidOn) : '—'}</td></tr>`).join('')}</tbody>
-    <tfoot><tr><td colspan="2">${ls.length} lessons${rateCents == null ? '' : ` · rate ${formatEuro(rateCents)}/h`}</td><td class="num">${formatHours(minutes)}</td>${money(earningsCents(minutes, rateCents))}<td></td></tr></tfoot></table>
+    <tbody>${ls.map((l, i) => `<tr${i && l.date !== ls[i - 1].date ? ' class="newday"' : ''}><td>${day(l.date)}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(earningsCents(l.durationMinutes, rateCents))}<td>${l.paidOn ? day(l.paidOn) : '—'}</td></tr>`).join('')}
+    <tr class="total"><td colspan="2">${ls.length} lessons${rateCents == null ? '' : ` · rate ${formatEuro(rateCents)}/h`}</td><td class="num">${formatHours(minutes)}</td>${money(earningsCents(minutes, rateCents))}<td></td></tr></tbody></table>
     <p class="sub">Printed ${day(today())}</p>`;
 }
 

@@ -130,8 +130,7 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
   #print th { border-bottom: 1pt solid #000; }
   #print tr.newday td { border-top: 1pt solid #b5b5b5; } /* a line only where the day changes; 1pt (not 1px) light grey so preview scaling and black-and-white printers keep it */
   #print .num { text-align: right; font-variant-numeric: tabular-nums; }
-  #print tfoot { display: table-row-group; } /* print the totals once, after the last row, not on every page */
-  #print tfoot td { font-weight: 600; border-top: 1.5pt solid #000; border-bottom: 0; }
+  #print tr.total td { font-weight: 600; border-top: 1.5pt solid #000; border-bottom: 0; }
   #print tr { break-inside: avoid; }
 }
 
