@@ -96,6 +96,10 @@ test('report: bad input is 400, a valid report without GITHUB_TOKEN is 503, POST
   assert.equal((await post(JSON.stringify({ title: 'x', text: 'hi' }))).status, 400); // title too short
   assert.equal((await post(JSON.stringify({ title: 'Crash', text: 'y'.repeat(4001) }))).status, 400);
   if (!process.env.RELAY) assert.equal((await post(JSON.stringify({ title: 'Crash on save', text: 'It closed', app: 'Karvo 3.7', device: 'Pixel' }))).status, 503);
+  const comment = (n, body) => fetch(`${http()}/report/${n}/comment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  assert.equal((await comment(1, JSON.stringify({ text: 'more info' }))).status, 400); // no key
+  assert.equal((await comment(1, JSON.stringify({ text: '', key: 'A'.repeat(22) }))).status, 400);
+  if (!process.env.RELAY) assert.equal((await comment(1, JSON.stringify({ text: 'more info', key: 'A'.repeat(22) }))).status, 503);
   const pre = await fetch(`${http()}/report`, { method: 'OPTIONS' });
   assert.match(pre.headers.get('access-control-allow-methods'), /POST/);
   assert.match(pre.headers.get('access-control-allow-headers'), /Content-Type/);

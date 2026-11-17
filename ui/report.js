@@ -16,14 +16,19 @@ export const sentReports = () => { try { return JSON.parse(localStorage.getItem(
 const rememberReport = r => { try { localStorage.setItem(KEY, JSON.stringify([r, ...sentReports()])); } catch {} };
 
 /** Public repo, so no token: { open, replies: [{ author, body, date }] }. */
-async function reportStatus(n) {
+async function reportStatus(n, t) {
   const get = async path => {
     const r = await fetch(`https://api.github.com/repos/RexSAS/Karvo/issues/${n}${path}`, { headers: { Accept: 'application/vnd.github+json' } });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
   };
   const [issue, comments] = await Promise.all([get(''), get('/comments')]);
-  return { open: issue.state === 'open', replies: comments.map(c => ({ author: c.user.login === 'RexSAS' ? 'Karvo' : c.user.login, body: c.body, date: c.created_at.slice(0, 10) })) };
+  // The reporter's comments from the Android app end with this line (posted with the same token as the answers).
+  const MARK = '_Reply from the reporter in Karvo._';
+  return { open: issue.state === 'open', replies: comments.map(c => {
+    const body = c.body.trim(), mine = body.endsWith(MARK);
+    return { author: mine ? t('reportYou') : c.user.login === 'RexSAS' ? 'Karvo' : c.user.login, body: mine ? body.slice(0, -MARK.length).trim() : body, date: c.created_at.slice(0, 10) };
+  }) };
 }
 
 /** root must contain a <form>: it is replaced by the list. */
@@ -40,7 +45,7 @@ export async function showMyReports(root, t, close) {
   for (const r of list) {
     const el = form.querySelector(`[data-n="${r.n}"]`);
     try {
-      const s = await reportStatus(r.n);
+      const s = await reportStatus(r.n, t);
       el.querySelector('[data-state]').textContent = t(s.open ? 'reportOpen' : 'reportClosed');
       el.querySelector('[data-replies]').innerHTML = s.replies.length
         ? s.replies.map(c => `<div style="background:var(--s4,rgba(127,127,127,.12));border-radius:8px;padding:8px;margin-top:6px">

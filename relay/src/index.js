@@ -55,7 +55,33 @@ async function report(request, env) {
   });
   if (!gh.ok) return new Response('GitHub error', { status: 502 });
   const { number } = await gh.json();
-  return Response.json({ number });
+  // Reply key: only the app that sent the report can comment on it. The relay keeps just its hash.
+  const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  await env.REPORTS.get(env.REPORTS.idFromName('all')).setKey(number, await sha256Hex(key));
+  return Response.json({ number, key });
+}
+
+// The app spots its own comments by this line (they are posted with the same token, so GitHub shows the same author).
+const REPORTER_MARK = '_Reply from the reporter in Karvo._';
+
+async function comment(request, env, number) {
+  if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+  let body;
+  try { body = await request.json(); } catch { body = null; }
+  const text = typeof body?.text === 'string' ? body.text.trim() : '';
+  const key = typeof body?.key === 'string' ? body.key : '';
+  if (!text || text.length > 4000 || !/^[A-Za-z0-9_-]{22}$/.test(key)) return new Response('Bad comment', { status: 400 });
+  if (!env.GITHUB_TOKEN) return new Response('Reports not configured', { status: 503 });
+  const stub = env.REPORTS.get(env.REPORTS.idFromName('all'));
+  if (!(await stub.checkKey(number, await sha256Hex(key)))) return new Response('Unauthorized', { status: 401 });
+  if (!(await stub.allow(request.headers.get('CF-Connecting-IP') ?? ''))) return new Response('Too many reports', { status: 429 });
+  const gh = await fetch(`https://api.github.com/repos/${REPORT_REPO}/issues/${number}/comments`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'karvo-link', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body: `${noMention(text)}\n\n${REPORTER_MARK}` }),
+  });
+  if (!gh.ok) return new Response('GitHub error', { status: 502 });
+  return new Response(null, { status: 204 });
 }
 
 export default {
@@ -63,6 +89,8 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const path = new URL(request.url).pathname;
     if (path === '/report') return withCors(await report(request, env));
+    const c = path.match(/^\/report\/(\d{1,9})\/comment$/);
+    if (c) return withCors(await comment(request, env, Number(c[1])));
     const m = path.match(/^\/room\/([A-Za-z0-9_-]{22})$/);
     if (!m) return withCors(new Response('Not found', { status: 404 }));
     return withCors(await env.ROOM.get(env.ROOM.idFromName(m[1])).fetch(request));
@@ -123,7 +151,10 @@ export class Room extends DurableObject {
   }
 }
 
-/** One instance ("all") counts reports: 10 per hour per sender, 100 a day in total. Keeps only IP hashes, for 24 hours. */
+/**
+ * One instance ("all") counts reports and comments: 10 per hour per sender, 100 a day in total. Keeps only IP hashes,
+ * for 24 hours, and the hash of each report's reply key.
+ */
 export class Reports extends DurableObject {
   async allow(ip) {
     const now = Date.now(), hour = 3600_000;
@@ -134,4 +165,8 @@ export class Reports extends DurableObject {
     await this.ctx.storage.put('log', log);
     return true;
   }
+
+  async setKey(number, hash) { await this.ctx.storage.put(`key:${number}`, hash); }
+
+  async checkKey(number, hash) { return (await this.ctx.storage.get(`key:${number}`)) === hash; }
 }
