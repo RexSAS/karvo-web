@@ -3,7 +3,7 @@ import { parseRateCents, formatRateText } from '../../domain/rate.js';
 import { reminderState } from './backup.js';
 import { renderLinks } from './links.js';
 import { pickTextFile } from '../files.js';
-import { esc } from '../html.js';
+import { esc, reportMailto } from '../html.js';
 import { t, getLang, locale } from './i18n.js';
 
 export const APP_VERSION = 'web-7';
@@ -31,6 +31,8 @@ export function renderSettings(view, state, actions) {
       <div class="${state.flash?.err ? 'm-err' : 'm-ok'}" data-msg role="status">${esc(state.flash?.text ?? '')}</div>
     </div>
     <div class="m-card" data-links></div>
+    <div class="m-card"><a class="btn" href="${esc(reportMailto('Karvo – ' + t('reportProblem'), t('reportProblemBody'), APP_VERSION + ' iPhone'))}">${esc(t('reportProblem'))}</a>
+      <p class="m-note">${esc(t('reportProblemHint'))}</p></div>
     <div class="m-card"><button class="btn" data-tour>${esc(t('tourAgain'))}</button>
       <div class="m-about"><a class="m-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">${esc(t('privacy'))}</a>
       <span class="m-note">${esc(t('version', APP_VERSION))}</span></div></div>`;

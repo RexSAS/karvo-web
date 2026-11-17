@@ -1,7 +1,7 @@
 // Settings: hourly rate, season start, CSV import/export, and deleting this PC's backup.
 import { parseRateCents, formatRateText } from '../domain/rate.js';
 import { pickTextFile, downloadCsv } from './files.js';
-import { esc } from './html.js';
+import { esc, reportMailto } from './html.js';
 import { loadBackups, saveBackup, MAX_BACKUPS } from '../source/pcBackups.js';
 
 const REASONS = { manual: 'Manual', sync: 'Before sync', import: 'Before import', restore: 'Before restore' };
@@ -34,6 +34,8 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
     ${backups ? `<hr><label>Backups on this PC (up to ${MAX_BACKUPS})</label><div data-backups class="bk-list"></div>
     <div class="btns" style="justify-content:flex-start;margin-top:4px"><button type="button" class="btn small" data-backup-now ${snapshot.lessons.length || (snapshot.events ?? []).length ? '' : 'disabled'}>Back up now</button></div>` : ''}
     ${source.status === 'backup' && snapshot.lessons.length ? '<hr><button type="button" class="btn small danger" data-wipe>Delete lessons from this PC</button>' : ''}
+    <hr><label>Something wrong, or an idea?</label>
+    <div class="btns" style="justify-content:flex-start;margin-top:4px"><a class="btn small" href="${esc(reportMailto('Karvo – Report a problem', 'What happened? (what you clicked, what you expected)', 'PC'))}">Report a problem</a></div>
   </form>`;
   document.body.append(d);
   const $ = s => d.querySelector(s), close = () => { d.close(); d.remove(); };
