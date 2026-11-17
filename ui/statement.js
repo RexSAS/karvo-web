@@ -6,20 +6,31 @@ import { esc } from './html.js';
 import { shownLessons, isFiltering } from './lessons.js';
 
 const day = d => new Date(d + 'T12:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' });
+const dayRow = (d, year) => new Date(d + 'T12:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short', year: year ? 'numeric' : undefined });
 const monthTitle = m => new Date(m + '-15').toLocaleString('en', { month: 'long', year: 'numeric' });
+// The carved peak in flat colours: the page's gradient defs are hidden on paper.
+const LOGO = `<svg class="logo" viewBox="18 24.5 72 54" aria-hidden="true"><circle cx="33.5" cy="41" r="6.2" fill="#E0A23C"/><path d="M65.07,46.88 L83,75 L63.5,75 C55.5,68.5 54,62.5 60.5,56.5 C63.77,53.45 65.23,50.21 65.07,46.88 Z" fill="#5B8DDC"/><path d="M25,75 L53,28 C61.5,39 62.5,47.5 55,54.5 C48,61 49.5,68 57,75 Z" fill="#1B2550"/></svg>`;
 
 export function statementHtml(state) {
   const ls = shownLessons(state).reverse(); // oldest first, as on a bill
-  const { rateCents } = state.snapshot, minutes = ls.reduce((s, l) => s + l.durationMinutes, 0);
+  const { rateCents } = state.snapshot, sum = xs => xs.reduce((s, l) => s + l.durationMinutes, 0);
+  const multiYear = ls.length > 0 && ls[0].date.slice(0, 4) !== ls.at(-1).date.slice(0, 4);
+  const minutes = sum(ls), unpaid = sum(ls.filter(l => !l.paidOn)), withRate = rateCents != null;
   const what = isFiltering(state)
     ? [state.search.trim() && `“${state.search.trim()}”`, state.paidFilter === false && 'not paid', state.paidFilter === true && 'paid'].filter(Boolean).join(' · ')
     : monthTitle(state.view);
   const money = cents => cents == null ? '' : `<td class="num">${formatEuro(cents)}</td>`;
-  return `<h1>Karvo · Lesson statement</h1><p class="sub">${esc(what)}${ls.length ? ` · ${day(ls[0].date)} – ${day(ls.at(-1).date)}` : ''}</p>
-    <table><thead><tr><th>Date</th><th>Student</th><th class="num">Hours</th>${rateCents == null ? '' : '<th class="num">Amount</th>'}<th>Paid</th></tr></thead>
-    <tbody>${ls.map((l, i) => `<tr${i && l.date !== ls[i - 1].date ? ' class="newday"' : ''}><td>${day(l.date)}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(earningsCents(l.durationMinutes, rateCents))}<td>${l.paidOn ? day(l.paidOn) : '—'}</td></tr>`).join('')}
-    <tr class="total"><td colspan="2">${ls.length} lessons${rateCents == null ? '' : ` · rate ${formatEuro(rateCents)}/h`}</td><td class="num">${formatHours(minutes)}</td>${money(earningsCents(minutes, rateCents))}<td></td></tr></tbody></table>
-    <p class="sub">Printed ${day(today())}</p>`;
+  const kpi = (label, value, cls = '') => `<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${value}</div></div>`;
+  return `<div class="st-head">${LOGO}<div class="brand">Karvo<small>Ski lesson hours</small></div>
+      <div class="doc"><h1>Lesson statement</h1><div>${esc(what)}</div>${ls.length ? `<div class="sub">${day(ls[0].date)} – ${day(ls.at(-1).date)}</div>` : ''}</div></div>
+    <div class="kpis">${kpi('Lessons', ls.length)}${kpi('Hours', formatHours(minutes))}${withRate ? kpi('Amount', formatEuro(earningsCents(minutes, rateCents)), 'main') : ''}${withRate && unpaid ? kpi('Not paid yet', formatEuro(earningsCents(unpaid, rateCents)), 'owed') : ''}</div>
+    <table><thead><tr><th>Date</th><th>Student</th><th class="num">Hours</th>${withRate ? '<th class="num">Amount</th>' : ''}<th>Payment</th></tr></thead>
+    <tbody>${ls.map((l, i) => {
+      const first = !i || l.date !== ls[i - 1].date; // the date only on a day's first lesson
+      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(earningsCents(l.durationMinutes, rateCents))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
+    }).join('')}
+    <tr class="total"><td colspan="2">Total${withRate ? `<span class="rate">${formatEuro(rateCents)} per hour</span>` : ''}</td><td class="num">${formatHours(minutes)}</td>${money(earningsCents(minutes, rateCents))}<td></td></tr></tbody></table>
+    <div class="st-foot"><span>Printed ${day(today())}</span><span>karvo.rxsas.it</span></div>`;
 }
 
 export function fillStatementOnPrint(getState) {

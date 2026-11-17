@@ -117,21 +117,38 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
 .chip.paid[aria-pressed="true"] .n { background: var(--primary); color: var(--on-primary); }
 @media (prefers-reduced-motion: reduce) { .l-search, .l-search > svg, .chip { transition: none; } .chip:active { transform: none; } }
 
-/* Print: only the lesson statement (ui/statement.js), black on white */
+/* Print: only the lesson statement (ui/statement.js): a formal letterhead in Karvo's night blue and gold */
 #print { display: none; }
+@page { margin: 14mm 14mm 16mm; }
 @media print {
-  body { display: block; overflow: visible; background: #fff; color: #000; font: 11pt/1.4 system-ui, sans-serif; }
+  body { display: block; overflow: visible; background: #fff; color: #1B2550; font: 10pt/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   body > :not(#print) { display: none !important; }
   #print { display: block; }
-  #print h1 { font: 500 20pt/1.2 var(--disp); margin: 0; }
-  #print .sub { color: #555; margin: 4px 0 16px; }
+  #print .st-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12pt; border-bottom: 2pt solid #1B2550; }
+  #print .logo { width: 44px; height: 33px; }
+  #print .brand { font: 500 20pt/1 var(--disp); letter-spacing: .5px; }
+  #print .brand small { display: block; font: 8pt/1.6 system-ui, sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #6B7495; }
+  #print .doc { margin-left: auto; text-align: right; }
+  #print .doc h1 { margin: 0 0 2pt; font: 500 15pt/1.1 var(--disp); text-transform: uppercase; letter-spacing: 2px; color: #B07A1E; }
+  #print .doc .sub { color: #6B7495; font-size: 9pt; }
+  #print .kpis { display: flex; gap: 8pt; margin: 14pt 0 16pt; }
+  #print .kpi { flex: 1; padding: 8pt 10pt; border: 1pt solid #D9DEEC; border-radius: 6pt; background: #F5F7FC; }
+  #print .kpi .l { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1.2px; color: #6B7495; }
+  #print .kpi .v { font: 500 15pt/1.3 var(--disp); font-variant-numeric: tabular-nums; }
+  #print .kpi.main { background: #1B2550; border-color: #1B2550; color: #fff; } #print .kpi.main .l { color: #C9D2EE; }
+  #print .kpi.owed { background: #FBF3E4; border-color: #E8CFA0; } #print .kpi.owed .v { color: #9A6612; }
   #print table { width: 100%; border-collapse: collapse; }
-  #print th, #print td { text-align: left; padding: 5px 8px; }
-  #print th { border-bottom: 1pt solid #000; }
-  #print tr.newday td { border-top: 1pt solid #b5b5b5; } /* a line only where the day changes; 1pt (not 1px) light grey so preview scaling and black-and-white printers keep it */
+  #print th { text-align: left; padding: 6pt 8pt; font-size: 7.5pt; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: #6B7495; border-bottom: 1pt solid #1B2550; }
+  #print td { padding: 5pt 8pt; }
+  #print td.date { font-weight: 600; white-space: nowrap; }
+  #print td.pay { color: #6B7495; font-size: 9pt; white-space: nowrap; }
+  #print td.pay .due { color: #A87420; }
+  #print tr.newday td { border-top: 1pt solid #DADFEA; } /* a line only where the day changes; 1pt (not 1px) so preview scaling and black-and-white printers keep it */
   #print .num { text-align: right; font-variant-numeric: tabular-nums; }
-  #print tr.total td { font-weight: 600; border-top: 1.5pt solid #000; border-bottom: 0; }
+  #print tr.total td { padding-top: 8pt; font: 500 12pt/1.3 var(--disp); border-top: 1.5pt solid #1B2550; }
+  #print tr.total .rate { margin-left: 10pt; font: 9pt system-ui, sans-serif; color: #6B7495; }
   #print tr { break-inside: avoid; }
+  #print .st-foot { display: flex; justify-content: space-between; margin-top: 18pt; padding-top: 6pt; border-top: 1pt solid #DADFEA; font-size: 8pt; color: #6B7495; }
 }
 
 /* Calendar */
