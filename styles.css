@@ -86,6 +86,29 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
 .lesson .dur { color: var(--muted); font-variant-numeric: tabular-nums; }
 .lesson .note { grid-column: 1 / -1; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .add { flex: none; margin-top: 12px; padding: 10px; border-radius: 999px; background: var(--gold); color: var(--on-gold); font-weight: 600; box-shadow: 0 6px 20px #F4C06A40; }
+.l-head { display: flex; align-items: center; justify-content: space-between; flex: none; }
+.l-head h2 { margin: 0; }
+.icon-btn.small { width: 30px; height: 30px; } .icon-btn.small svg { width: 16px; height: 16px; }
+#l-search { flex: none; margin: 8px 0 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--s2); color: var(--ink); font: inherit; }
+.chips { display: flex; gap: 6px; flex: none; margin-bottom: 8px; }
+.chip { padding: 3px 12px; border-radius: 999px; border: 1px solid var(--outline); color: var(--muted); font-size: 12px; }
+.chip:hover { background: var(--s5); }
+.chip[aria-pressed="true"] { background: var(--primary-c); border-color: var(--primary); color: var(--ink); }
+
+/* Print: only the lesson statement (ui/statement.js), black on white */
+#print { display: none; }
+@media print {
+  body { display: block; overflow: visible; background: #fff; color: #000; font: 11pt/1.4 system-ui, sans-serif; }
+  body > :not(#print) { display: none !important; }
+  #print { display: block; }
+  #print h1 { font: 500 20pt/1.2 var(--disp); margin: 0; }
+  #print .sub { color: #555; margin: 4px 0 16px; }
+  #print table { width: 100%; border-collapse: collapse; }
+  #print th, #print td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #ccc; }
+  #print .num { text-align: right; font-variant-numeric: tabular-nums; }
+  #print tfoot td { font-weight: 600; border-top: 2px solid #000; border-bottom: 0; }
+  #print tr { break-inside: avoid; }
+}
 
 /* Calendar */
 .cal-head { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px; flex: none; }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { students, seasonStats, studentKey } from '../domain/stats.js';
+import { students, seasonStats, studentKey, filterLessons } from '../domain/stats.js';
 
 const L = (id, date, student, durationMinutes = 60) => ({ id, date, durationMinutes, student, notes: null, paidOn: null });
 const season = { startYear: 2025, startMonth: 11 };
@@ -39,4 +39,18 @@ test('lifetime: totals over everything, hours per season oldest first, top stude
   assert.equal(s.top[0].name, 'A');
   assert.equal(s.weekdayMinutes[5], 390); // all Saturdays
   assert.deepEqual(lifetimeStats([], 11).perSeason, []);
+});
+
+test('filterLessons: student or notes, any case, and the paid state', () => {
+  const ls = [
+    { id: 1, date: '2026-01-01', durationMinutes: 60, student: 'Anna', notes: null, paidOn: null },
+    { id: 2, date: '2026-01-02', durationMinutes: 60, student: 'Bob', notes: 'with ANNA sister', paidOn: '2026-01-10' },
+    { id: 3, date: '2026-01-03', durationMinutes: 60, student: 'Carl', notes: null, paidOn: null },
+  ];
+  const ids = (...a) => filterLessons(ls, ...a).map(l => l.id);
+  assert.deepEqual(ids('  anna '), [1, 2]);
+  assert.deepEqual(ids('', false), [1, 3]);
+  assert.deepEqual(ids('', true), [2]);
+  assert.deepEqual(ids('anna', false), [1]);
+  assert.deepEqual(ids(''), [1, 2, 3]);
 });

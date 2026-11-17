@@ -1,7 +1,7 @@
 // Lessons tab: months newest first with their hours, search, and the add/edit/delete sheet.
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { validateLesson, parseDurationField } from '../../domain/validate.js';
-import { students } from '../../domain/stats.js';
+import { students, filterLessons } from '../../domain/stats.js';
 import { upcomingDays, MAX_EVENT } from '../../domain/events.js';
 import { esc } from '../html.js';
 import { openSheet } from './sheet.js';
@@ -11,13 +11,12 @@ const monthTitle = m => new Date(m + '-15').toLocaleString(locale(), { month: 'l
 const dayTitle = d => new Date(d + 'T12:00').toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
 export function renderLessons(view, { snapshot, search }, actions) {
-  const q = search.trim().toLowerCase();
-  const list = snapshot.lessons.filter(l => !q || l.student.toLowerCase().includes(q) || (l.notes ?? '').toLowerCase().includes(q))
+  const list = filterLessons(snapshot.lessons, search)
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   const months = [...new Set(list.map(l => monthOf(l.date)))];
   const soon = upcomingDays(snapshot.events, today(), 3);
   const when = n => (n === 0 ? t('today') : n === 1 ? t('tomorrow') : t('inDays', n));
-  const eventsCard = q ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
+  const eventsCard = search.trim() ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
     ${soon.length ? soon.map(d => d.events.map((e, i) => `<button class="m-event-row" data-event="${e.id}"><span class="d">${i ? '' : esc(when(d.inDays))}</span><span>${esc(e.text)}</span></button>`).join('')).join('')
       : `<p class="m-note">${esc(t('noEventsSoon'))}</p>`}</div>`;
   view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${eventsCard}

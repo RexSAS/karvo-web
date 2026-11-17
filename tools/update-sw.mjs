@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 const root = new URL('..', import.meta.url).pathname;
-const skip = new Set(['docs', 'test', 'tools', 'relay', 'node_modules', '.git', '.superpowers', 'CNAME', 'package.json', 'sw.js', '.gitignore']);
+const skip = new Set(['docs', 'test', 'tools', 'relay', 'node_modules', '.git', '.superpowers', '.claude', 'CNAME', 'package.json', 'sw.js', '.gitignore']);
 // git's list, not the disk: local scratch files (fake-phone.json…) must never end up in the offline cache.
 const files = execSync('git ls-files --cached --others --exclude-standard', { cwd: root, encoding: 'utf8' }).trim().split('\n')
   .filter(f => !skip.has(f) && !skip.has(f.split('/')[0])).sort();

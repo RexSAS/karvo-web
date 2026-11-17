@@ -8,7 +8,7 @@ import { openStore } from './source/idbStore.js';
 import { emptySnapshot, createSource } from './source/core.js';
 import { createConnection, deleteRoom, RELAY_URL } from './link/connection.js';
 import { pcName } from './link/pairing.js';
-import { monthOf, today } from './domain/dates.js';
+import { monthOf, today, addMonths } from './domain/dates.js';
 import { runSplash } from './ui/splash.js';
 import { renderBanner } from './ui/banner.js';
 import { renderEmpty } from './ui/empty.js';
@@ -16,6 +16,7 @@ import { paintMoney, glint } from './ui/money.js';
 import { pickTextFile } from './ui/files.js';
 import { renderCalendar } from './ui/calendar.js';
 import { renderLessons } from './ui/lessons.js';
+import { fillStatementOnPrint } from './ui/statement.js';
 import { openLessonDialog } from './ui/lessonDialog.js';
 import { renderOverview } from './ui/overview.js';
 import { renderStats } from './ui/stats.js';
@@ -33,11 +34,13 @@ const params = new URLSearchParams(location.search);
 const RELAY = /^ws:\/\/localhost(:\d+)?$/.test(params.get('relay') ?? '') ? params.get('relay') : RELAY_URL;
 
 const state = {
-  source: null, unsub: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false,
+  source: null, unsub: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false, search: '', paidFilter: null,
   store: null, backup: null, conn: null, pairing: null, link: { paired: false, state: 'offline', peerName: '', phoneNewer: false },
 };
 
 export const actions = {
+  setSearch(q) { state.search = q; render(); },
+  setPaidFilter(paid) { state.paidFilter = paid; render(); },
   setView(month) { state.view = month; state.selDay = null; render(); },
   selectDay(date) { state.view = monthOf(date); state.selDay = date; render(); },
   editEvent(date, id = null) {
@@ -184,6 +187,19 @@ addEventListener('resize', render);
 $('settings-btn').onclick = () => openSettings(state.source, () => state.snapshot,
   params.has('demo') ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone },
   params.has('demo') || !state.store ? null : { store: state.store, canRestore: state.source.status === 'backup' });
+
+fillStatementOnPrint(() => state);
+
+// Keyboard: N adds a lesson, ← → change month, / searches. Not while typing or with a dialog open (Esc closes those).
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.('input, textarea, select') || document.querySelector('dialog[open]') || $('app').hidden) return;
+  const go = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+  if (go) actions.setView(addMonths(state.view, go));
+  else if (e.key.toLowerCase() === 'n' && state.source.canEdit) actions.add();
+  else if (e.key === '/') $('l-search').focus();
+  else return;
+  e.preventDefault();
+});
 
 // Tooltips for anything with data-tip (chart marks).
 const tip = $('tip');
