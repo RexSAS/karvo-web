@@ -30,13 +30,16 @@ export function renderLessons(el, state, actions) {
   const evs = selDay && !filtering ? eventsOn(snapshot.events, selDay) : [];
   const eventsPanel = selDay && !filtering ? `<div class="day-events"><div class="de-head"><b>${dayTitle(selDay)}</b><button class="btn small" data-event-new ${ro}>+ Event</button></div>
     ${evs.map(e => `<button class="de-row" data-event="${e.id}" ${ro}><span>${esc(e.text)}</span><span class="sub">Edit</span></button>`).join('')}</div>` : '';
-  const chip = (v, label) => `<button class="chip" data-paid="${v}" aria-pressed="${paidFilter === v}">${label}</button>`;
+  // Each chip counts what it would show with the current search; Not paid wears gold (money owed), Paid a glacier-blue check.
+  const chip = (v, label, mark) => `<button class="chip ${v ? 'paid' : 'unpaid'}" data-paid="${v}" aria-pressed="${paidFilter === v}">${mark}${label}<span class="n">${filterLessons(snapshot.lessons, state.search, v).length}</span></button>`;
   const typing = document.activeElement?.id === 'l-search';
   el.innerHTML = `<div class="l-head"><h2>Lessons · ${filtering ? `${shown.length} found` : month}</h2>
       <button class="icon-btn small" data-print title="Print statement (Ctrl+P)" aria-label="Print statement">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></div>
-    <input id="l-search" type="search" placeholder="Search students and notes  ( / )" aria-label="Search lessons" value="${esc(state.search)}">
-    <div class="chips">${chip(false, 'Not paid')}${chip(true, 'Paid')}</div>${eventsPanel}
+    <label class="l-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="l-search" type="search" placeholder="Search students and notes" aria-label="Search lessons" value="${esc(state.search)}">
+      ${state.search ? '<button type="button" class="clear" aria-label="Clear search" title="Clear (Esc)">✕</button>' : '<kbd title="Press / to search">/</kbd>'}</label>
+    <div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}</div>${eventsPanel}
     <div class="scroll" id="lesson-list">${keys.length ? keys.map(k => {
       const ls = shown.filter(l => (filtering ? monthOf(l.date) : l.date) === k);
       return filtering
@@ -47,6 +50,7 @@ export function renderLessons(el, state, actions) {
   const input = el.querySelector('#l-search');
   if (typing) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
   input.oninput = () => actions.setSearch(input.value);
+  el.querySelector('.l-search .clear')?.addEventListener('click', () => { actions.setSearch(''); el.querySelector('#l-search').focus(); });
   input.onkeydown = e => { if (e.key === 'Escape') { e.preventDefault(); actions.setSearch(''); el.querySelector('#l-search').blur(); } };
   el.querySelectorAll('[data-paid]').forEach(b => b.onclick = () => {
     const v = b.dataset.paid === 'true';
