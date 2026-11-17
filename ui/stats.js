@@ -49,8 +49,9 @@ export function areaChart(el, perMonth, cur, actions) {
   el.onclick = e => { const g = e.target.closest('[data-m]'); if (g) actions.setView(g.dataset.m); };
 }
 
-export function donut(el, s, centerLabel = 'this season') {
-  const parts = s.top.map((t, i) => [t.name, t.minutes, CAT[i]]);
+/** onStudent(name), when given, makes each top student's legend row a button. */
+export function donut(el, s, centerLabel = 'this season', onStudent = null) {
+  const parts = s.top.map((t, i) => [t.name, t.minutes, CAT[i], true]);
   if (s.otherMinutes) parts.push(['Other', s.otherMinutes, OTHER]);
   const S = Math.max(60, Math.min(el.clientHeight, 150)), r = S / 2 - 12, C = 2 * Math.PI * r;
   let off = 0;
@@ -63,7 +64,9 @@ export function donut(el, s, centerLabel = 'this season') {
   el.innerHTML = `<svg width="${S}" height="${S}" role="img" aria-label="Top students">${arcs.join('')}
       <text class="c1" x="${S / 2}" y="${S / 2 + 2}" text-anchor="middle">${formatHours(s.minutes)}</text>
       <text class="c2" x="${S / 2}" y="${S / 2 + 18}" text-anchor="middle">${centerLabel}</text></svg>
-    <div class="leg">${parts.map(([k, v, c]) => `<div><i style="background:${c}"></i><span>${esc(k)}</span><span>${formatHours(v)} · ${Math.round(v / s.minutes * 100)}%</span></div>`).join('')}</div>`;
+    <div class="leg">${parts.map(([k, v, c, top], i) => { const tag = onStudent && top ? 'button' : 'div';
+      return `<${tag} ${tag === 'button' ? `data-i="${i}"` : ''}><i style="background:${c}"></i><span>${esc(k)}</span><span>${formatHours(v)} · ${Math.round(v / s.minutes * 100)}%</span></${tag}>`; }).join('')}</div>`;
+  if (onStudent) el.querySelectorAll('.leg button').forEach(b => b.onclick = () => onStudent(parts[b.dataset.i][0]));
 }
 
 export function columns(el, vals) {

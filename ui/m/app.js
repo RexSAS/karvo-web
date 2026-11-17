@@ -2,7 +2,7 @@
 // and the PC link with the iPhone as master.
 import { openStore } from '../../source/idbStore.js';
 import { createLocalSource } from '../../source/local.js';
-import { students } from '../../domain/stats.js';
+import { students, studentKey } from '../../domain/stats.js';
 import { lessonsToCsv, csvFileBytes, csvFileName } from '../../domain/csv.js';
 import { today } from '../../domain/dates.js';
 import { esc } from '../html.js';
@@ -11,6 +11,10 @@ import { renderCalendar } from './calendar.js';
 import { today as todayDate, monthOf } from '../../domain/dates.js';
 import { eventsOn } from '../../domain/events.js';
 import { renderOverview } from './overview.js';
+import { renderBadges, renderStudent, openBadgeUnlock, openSeasonWelcome, seasonMinutes } from './pages.js';
+import { badgeProgress, badgeToAnnounce, badgeMark } from '../../domain/badges.js';
+import { seasonOf } from '../../domain/seasons.js';
+import { seasonWelcome } from '../../domain/stats.js';
 import { renderSettings, APP_VERSION } from './settings.js';
 import { startScreen, runTour, openWelcome, openWhatsNew } from './tour.js';
 import { reminderState, snooze, recordBackup, recordSync } from './backup.js';
@@ -55,7 +59,10 @@ async function saveMeta(next) {
 }
 
 export const actions = {
-  setTab(tab) { state.tab = tab; state.cal = null; state.flash = null; render(); },
+  setTab(tab) { state.tab = tab; state.cal = null; state.page = null; state.flash = null; render(); },
+  /** An inner page of Overview ({ kind: 'badges' } or { kind: 'student', key }); null goes back. */
+  openPage(page) { state.tab = 'overview'; state.page = page; document.querySelector('.m-view').scrollTop = 0; render(); },
+  back() { if (state.page) actions.openPage(null); else actions.setCal(null); },
   /** Opens (or moves) the calendar on the Lessons tab; null closes it. */
   setCal(cal) { state.cal = cal; render(); },
   openCalendar() { const d = todayDate(); actions.setCal({ month: monthOf(d), day: d }); },
@@ -119,9 +126,10 @@ function render({ keepFocus = false } = {}) {
   const r = reminderState(state.meta, new Date(), state.snapshot.lessons.length > 0);
   const screen = document.querySelector('.m-screen');
   const titles = { lessons: t('lessons'), overview: t('overview'), settings: t('settings') };
-  const cal = state.tab === 'lessons' && state.cal;
-  screen.querySelector('.m-head h1').textContent = cal ? t('calendar') : titles[state.tab];
-  screen.querySelector('[data-back]').hidden = !cal;
+  const cal = state.tab === 'lessons' && state.cal, page = state.tab === 'overview' && state.page;
+  const student = page?.kind === 'student' && students(state.snapshot.lessons).find(s => studentKey(s.name) === page.key);
+  screen.querySelector('.m-head h1').textContent = cal ? t('calendar') : page ? (page.kind === 'badges' ? t('badges') : student?.name ?? '') : titles[state.tab];
+  screen.querySelector('[data-back]').hidden = !cal && !page;
   screen.querySelector('[data-cal]').hidden = state.tab !== 'lessons' || !!cal;
   const banner = screen.querySelector('.m-banner-slot');
   const todays = eventsOn(state.snapshot.events, today()).map(e => e.text).join(' · ');
@@ -131,7 +139,8 @@ function render({ keepFocus = false } = {}) {
   const view = screen.querySelector('.m-view');
   const focused = keepFocus && document.activeElement?.classList.contains('m-search') ? document.activeElement.selectionStart : null;
   const scroll = view.scrollTop;
-  (cal ? renderCalendar : { lessons: renderLessons, overview: renderOverview, settings: renderSettings }[state.tab])(view, state, actions);
+  (cal ? renderCalendar : page ? (page.kind === 'badges' ? renderBadges : renderStudent)
+    : { lessons: renderLessons, overview: renderOverview, settings: renderSettings }[state.tab])(view, state, actions);
   view.scrollTop = scroll;
   if (focused != null) { const s = view.querySelector('.m-search'); s.focus(); s.setSelectionRange(focused, focused); }
   screen.querySelectorAll('.m-tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === state.tab ? 'page' : 'false'));
@@ -139,6 +148,15 @@ function render({ keepFocus = false } = {}) {
   screen.querySelector('.m-fab').hidden = state.tab !== 'lessons' || !!cal;
   document.querySelector('.m-backdrop')?.setAttribute('data-tab', state.tab);
   renderBlocking(r);
+}
+
+/** A badge reached (here or from a linked PC) gets its unlock moment once; losing hours never re-announces. */
+function celebrate() {
+  const { lessons, seasonStartMonth } = state.snapshot, season = seasonOf(today(), seasonStartMonth);
+  const minutes = seasonMinutes(lessons, today(), seasonStartMonth), badge = badgeToAnnounce(season, badgeProgress(minutes).earned, state.meta.badgeMark);
+  if (!badge) return;
+  saveMeta({ ...state.meta, badgeMark: badgeMark(season, badge) });
+  openBadgeUnlock(badge, () => actions.openPage({ kind: 'badges' }));
 }
 
 export async function startIphone() {
@@ -165,14 +183,27 @@ export async function startIphone() {
   runSplash();
   screen.querySelector('.m-fab').onclick = actions.add;
   screen.querySelector('[data-cal]').onclick = () => actions.openCalendar();
-  screen.querySelector('[data-back]').onclick = () => actions.setCal(null);
+  screen.querySelector('[data-back]').onclick = () => actions.back();
+  // Swipe right from the left edge goes back from inner pages (as on Android).
+  let swipe = null;
+  screen.addEventListener('touchstart', e => { const x = e.touches[0].clientX; swipe = x < 28 ? { x, y: e.touches[0].clientY } : null; }, { passive: true });
+  screen.addEventListener('touchend', e => {
+    const p = e.changedTouches[0], open = state.page || (state.tab === 'lessons' && state.cal);
+    if (swipe && open && p.clientX - swipe.x > 80 && Math.abs(p.clientY - swipe.y) < 60) actions.back();
+    swipe = null;
+  }, { passive: true });
   screen.querySelector('.m-tabs').onclick = e => { const b = e.target.closest('button'); if (b) actions.setTab(b.dataset.tab); };
-  state.source.subscribe(s => { state.snapshot = s; render(); });
+  state.source.subscribe(s => { state.snapshot = s; render(); celebrate(); });
   // Once per version: welcome (fresh app) or What's new (after an update), then the version is remembered.
   const start = startScreen(state.meta.seenVersion, APP_VERSION, state.snapshot.lessons.length > 0);
   await saveMeta({ ...state.meta, seenVersion: APP_VERSION });
   if (start === 'welcome') openWelcome(() => actions.tour());
   if (start === 'whatsNew') openWhatsNew('Karvo');
+  // First open in a new season: last season in one line. Always remember this season, so it shows once.
+  const season = seasonOf(today(), state.snapshot.seasonStartMonth);
+  const welcome = seasonWelcome(state.snapshot.lessons, today(), state.snapshot.seasonStartMonth, state.meta.welcomedSeason);
+  if (state.meta.welcomedSeason !== season.startYear) await saveMeta({ ...state.meta, welcomedSeason: season.startYear });
+  if (welcome) openSeasonWelcome(welcome);
   state.links = await startLinks(state, actions);
   setInterval(() => render(), 60 * 60 * 1000); // reminders move on while the app stays open
 }

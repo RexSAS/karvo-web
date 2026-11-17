@@ -373,3 +373,35 @@ body.m { overflow: hidden; background: var(--bg); }
 .m-cal-lesson { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .m-cal-lesson:first-of-type { border-top: 0; }
 [data-dayview] { animation: up .3s var(--ease) both; }
+
+/* Badges and the student page (iPhone), as on Android 3.5–3.6. */
+.m-hero .m-kpis > div:first-child { padding-right: 84px; }
+.m-badge-slot { position: absolute; right: 0; top: 0; width: 80px; display: grid; justify-items: center; gap: 2px; color: var(--muted); }
+.m-badge-slot span { font-size: 11px; line-height: 1.2; text-align: center; color: var(--ink); }
+.m-vs { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.m-student .m-kpis > div:first-child { padding-right: 0; }
+.m-student .m-note { margin: 12px 0 0; }
+.m-badge-hero { text-align: center; padding: 8px 0 16px; }
+.m-badge-hero h3 { font: 500 26px/1.2 var(--disp); margin: 12px 0 4px; }
+.m-badge-hero p { color: var(--muted); margin: 0; }
+.m-progress { height: 10px; border-radius: 5px; background: var(--s5); overflow: hidden; margin: 10px 0 6px; }
+.m-progress i { display: block; height: 100%; background: var(--gold); border-radius: 5px; }
+.m-brow { display: grid; grid-template-columns: 52px 1fr auto; gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.m-brow:first-of-type { border-top: 0; }
+.m-brow .name { font-weight: 600; }
+.m-brow .name small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; }
+.m-brow .sub { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.m-brow.locked .medal { opacity: .3; }
+.leg button { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; width: 100%; min-height: 32px; text-align: left; color: inherit; }
+.m-unlock { position: relative; overflow: hidden; }
+.m-unlock small { display: block; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.m-unlock .medal { display: block; margin: 8px auto; position: relative; }
+.m-unlock .burst { position: absolute; left: 50%; top: 96px; width: 360px; height: 360px; margin: -180px 0 0 -180px; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, #FFD98A33 0 6deg, transparent 6deg 24deg); border-radius: 50%;
+  -webkit-mask: radial-gradient(#000 20%, transparent 70%); mask: radial-gradient(#000 20%, transparent 70%); animation: burst 6s linear infinite; }
+.m-unlock .pop { animation: pop var(--t-med) 150ms var(--ease) both; }
+.m-unlock .up { animation: up var(--t-med) var(--d, 0ms) var(--ease) both; }
+@keyframes burst { to { transform: rotate(1turn); } }
+@keyframes pop { 0% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .m-unlock .burst, .m-unlock .pop, .m-unlock .up { animation: none; } }
+.m-start p.gold { color: var(--gold); }

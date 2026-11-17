@@ -44,7 +44,18 @@ export const STRINGS = {
     tourSettingsTitle: 'Make it yours', tourSettingsBody: 'Set your hourly rate, when the season starts and the language.',
     tourBackupTitle: 'Backups', tourBackupBody: 'Your lessons live only on this iPhone. Back up every few days: save the CSV to Files or send it to yourself.',
     tourPcTitle: 'Use Karvo on your PC', tourPcBody: 'Open karvo.rxsas.it on your computer and link it here by scanning the code.',
-    whatsNewTitle: 'What’s new in %1', whatsNewItems: 'A new look: the sky at first light over the mountains, a new logo and a new app icon.|Meet Kevin, the Karvo penguin. He sleeps in the snow where there is nothing yet.|Clearer numbers and a calmer tab bar.',
+    whatsNewTitle: 'What’s new in %1', whatsNewItems: 'Badges: earn one as your season’s hours grow, from Karver at your first hour to Legend of the slopes at 600h. Your badge sits next to the hours on Overview; tap it to see them all.|Tap a student under Top students for their hours, lessons, last 6 months and every lesson with them.|Overview shows this season against last season at the same date, and a welcome card sums up last season when a new one starts.|Swipe right from the left edge to go back.',
+    back: 'Back', badges: 'Badges', badgesAll: 'All badges', badgesBySeason: 'Your seasons', badgeNone: 'No badge yet', badgeEarned: 'Earned',
+    badgeNext: 'Next: %1 at %2', badgeToGo: '%1 to go', badgeAllEarned: 'Every badge earned this season', badgeUnlocked: 'Badge unlocked',
+    badgeUnlockedAt: 'Unlocked at %1 this season', badgeOk: 'Nice!', badgeSeeAll: 'See badges',
+    badge_karver: 'Karver', badge_firstSnow: 'First snow', badge_bunnyHill: 'Bunny hill', badge_snowplough: 'Snowplough', badge_redRun: 'Red run',
+    badge_parallel: 'Parallel', badge_edgeMaster: 'Edge master', badge_blackRun: 'Black run', badge_moguls: 'Mogul master', badge_offPiste: 'Off-piste',
+    badge_powder: 'Powder hound', badge_freerider: 'Freerider', badge_snowKing: 'Snow king', badge_legend: 'Legend of the slopes',
+    totalHours: 'Total hours', avgLesson: 'Avg. lesson', earnings: 'Earnings', firstLast: 'First lesson %1 · last %2', lastSixMonths: 'Last 6 months',
+    thisSeasonLabel: 'This season %1', lastSeason: 'Last season', studentGone: 'No lessons with this student any more.',
+    seasonVsLast: '%1 vs %2 at this date', lessonCount1: '%1 lesson', lessonCountN: '%1 lessons', studentCount1: '%1 student', studentCountN: '%1 students',
+    seasonWelcomeTitle: 'Welcome to the %1 season!', seasonWelcomeBody: 'Have a great season. Karvo is ready for your first lesson.',
+    seasonWelcomeLast: 'Last season, %1: %2 · %3 · %4', seasonUnpaid1: '%1 month of %2 is still to be paid.', seasonUnpaidN: '%1 months of %2 are still to be paid.',
   },
   it: {
     lessons: 'Lezioni', overview: 'Panoramica', settings: 'Impostazioni',
@@ -89,7 +100,18 @@ export const STRINGS = {
     tourSettingsTitle: 'Personalizzala', tourSettingsBody: 'Imposta tariffa oraria, inizio stagione e lingua.',
     tourBackupTitle: 'Backup', tourBackupBody: 'Le lezioni sono solo su questo iPhone. Fai un backup ogni pochi giorni: salva il CSV su File o mandalo a te stesso.',
     tourPcTitle: 'Usa Karvo sul PC', tourPcBody: 'Apri karvo.rxsas.it sul computer e collegalo da qui scansionando il codice.',
-    whatsNewTitle: 'Novità della %1', whatsNewItems: 'Un nuovo look: il cielo all’alba sopra le montagne, un nuovo logo e una nuova icona.|Ecco Kevin, il pinguino di Karvo. Dorme nella neve dove non c’è ancora niente.|Numeri più chiari e una barra delle schede più pulita.',
+    whatsNewTitle: 'Novità della %1', whatsNewItems: 'Badge: ne guadagni uno man mano che crescono le ore della stagione, da Karver alla prima ora a Leggenda delle piste a 600h. Il tuo badge è accanto alle ore nella Panoramica; toccalo per vederli tutti.|Tocca un allievo in Allievi principali per vedere ore, lezioni, ultimi 6 mesi e tutte le lezioni con lui.|La Panoramica confronta questa stagione con la scorsa alla stessa data, e quando inizia una nuova stagione un benvenuto riassume la precedente.|Scorri a destra dal bordo sinistro per tornare indietro.',
+    back: 'Indietro', badges: 'Badge', badgesAll: 'Tutti i badge', badgesBySeason: 'Le tue stagioni', badgeNone: 'Ancora nessun badge', badgeEarned: 'Ottenuto',
+    badgeNext: 'Prossimo: %1 a %2', badgeToGo: 'Mancano %1', badgeAllEarned: 'Tutti i badge ottenuti in questa stagione', badgeUnlocked: 'Badge sbloccato',
+    badgeUnlockedAt: 'Sbloccato a %1 in questa stagione', badgeOk: 'Grande!', badgeSeeAll: 'Vedi i badge',
+    badge_karver: 'Karver', badge_firstSnow: 'Prima neve', badge_bunnyHill: 'Campo scuola', badge_snowplough: 'Spazzaneve', badge_redRun: 'Pista rossa',
+    badge_parallel: 'Paralleli', badge_edgeMaster: 'Maestro della lamina', badge_blackRun: 'Pista nera', badge_moguls: 'Re delle gobbe', badge_offPiste: 'Fuoripista',
+    badge_powder: 'Cacciatore di neve fresca', badge_freerider: 'Freerider', badge_snowKing: 'Re delle nevi', badge_legend: 'Leggenda delle piste',
+    totalHours: 'Ore totali', avgLesson: 'Lezione media', earnings: 'Guadagni', firstLast: 'Prima lezione %1 · ultima %2', lastSixMonths: 'Ultimi 6 mesi',
+    thisSeasonLabel: 'Questa stagione %1', lastSeason: 'Stagione scorsa', studentGone: 'Non ci sono più lezioni con questo allievo.',
+    seasonVsLast: '%1 rispetto al %2 a questa data', lessonCount1: '%1 lezione', lessonCountN: '%1 lezioni', studentCount1: '%1 allievo', studentCountN: '%1 allievi',
+    seasonWelcomeTitle: 'Benvenuto nella stagione %1!', seasonWelcomeBody: 'Buona stagione! Karvo è pronto per la tua prima lezione.',
+    seasonWelcomeLast: 'La scorsa stagione, %1: %2 · %3 · %4', seasonUnpaid1: '%1 mese della stagione %2 è ancora da pagare.', seasonUnpaidN: '%1 mesi della stagione %2 sono ancora da pagare.',
   },
 };
 
@@ -97,4 +119,6 @@ let lang = 'en';
 export const setLang = l => { lang = STRINGS[l] ? l : 'en'; };
 export const getLang = () => lang;
 export const locale = () => (lang === 'it' ? 'it-IT' : 'en-GB');
+/** key1 for one, keyN for the rest (English and Italian need no more). */
+export const tn = (key, n, ...args) => t(key + (n === 1 ? '1' : 'N'), n, ...args);
 export const t = (key, ...args) => (STRINGS[lang][key] ?? STRINGS.en[key] ?? key).replace(/%(\d)/g, (_, i) => args[i - 1] ?? '');
