@@ -49,5 +49,8 @@ export function badgeSvg(badge, size = 52, cls = '') {
     const y = cy + h * .08 + i * h * .065, w = half * (.42 - i * .08);
     out.push(`<polygon points="${pts([[cx - w, y], [cx, y + h * .05], [cx + w, y], [cx + w, y + h * .03], [cx, y + h * .08], [cx - w, y + h * .03]])}" fill="${INK}" fill-opacity=".78"/>`);
   }
+  // The glint (Android drawBadge glint): a slanted band clipped to the crest, parked off its left edge; styles.css sweeps it across.
+  defs.push(`<linearGradient id="${id}l"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>`);
+  out.push(`<g clip-path="url(#${id}c)"><g transform="rotate(20 50 50)"><rect class="glint" x="-40" y="-30" width="36" height="160" fill="url(#${id}l)"/></g></g>`);
   return `${open}<defs>${defs.join('')}</defs>${out.join('')}</svg>`;
 }

@@ -429,3 +429,12 @@ body.m { overflow: hidden; background: var(--bg); }
 @keyframes pop { 0% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .m-unlock .burst, .m-unlock .pop, .m-unlock .up { animation: none; } }
 .m-start p.gold { color: var(--gold); }
+
+/* Badges move (PC and iPhone), as in the Android unlock: the ice rays turn, a glint sweeps the crest every few seconds where a
+   badge stands alone (Overview slot, Badges hero, unlock), on hover in the PC lists; the big badge pops in when Badges opens. */
+.medal .rays { transform-box: view-box; transform-origin: 50px 53px; animation: burst 14s linear infinite; }
+.badge-btn .glint, .b-hero .glint, .m-badge-slot .glint, .m-badge-hero .glint, .m-unlock .glint { animation: badge-glint 5s 1s ease-in-out infinite; }
+.b-row:hover .glint { animation: badge-glint 4s ease-in-out; }
+.b-hero .medal, .m-badge-hero .medal { animation: pop var(--t-med) 100ms var(--ease) both; }
+@keyframes badge-glint { 0% { transform: translateX(0); } 30%, 100% { transform: translateX(150px); } }
+@media (prefers-reduced-motion: reduce) { .medal .rays, .medal .glint, .b-hero .medal, .m-badge-hero .medal { animation: none; } }
