@@ -2,7 +2,10 @@
 import { earningsCents } from '../domain/earnings.js';
 import { formatHours, monthOf, today, todayIn, addMonths } from '../domain/dates.js';
 import { paidStatus, monthPaidOn, unpaidTotals } from '../domain/paid.js';
-import { students } from '../domain/stats.js';
+import { students, seasonStats, lifetimeStats } from '../domain/stats.js';
+import { seasonOf } from '../domain/seasons.js';
+import { badgeProgress } from '../domain/badges.js';
+import { badgeSvg, badgeTitle, openBadges } from './badges.js';
 import { moneyHtml } from './money.js';
 import { READ_ONLY_TIP } from './lessons.js';
 
@@ -26,9 +29,12 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
   const payBtn = !inPrev.length ? '' : paidStatus(inPrev) === 'PAID'
     ? `<button class="btn small" data-unpay ${ro}>Mark unpaid</button>`
     : `<button class="btn small gold" data-pay ${ro}>Mark paid</button>`;
+  // The badge of the viewed month's season (as the Statistics row), so past seasons show theirs.
+  const season = seasonOf(view + '-01', snapshot.seasonStartMonth), seasonMin = seasonStats(lessons, season).minutes, badge = badgeProgress(seasonMin).earned;
   el.innerHTML = `<h2>Overview · ${monthName(view, { month: 'short', year: 'numeric' })}</h2>
     <div class="scroll">
-      <div class="kpi"><div class="l">Hours</div><div class="v">${formatHours(minutes).replace(/ (h|min)/g, '<small> $1</small>')}</div></div>
+      <div class="kpi"><div class="row"><div><div class="l">Hours</div><div class="v">${formatHours(minutes).replace(/ (h|min)/g, '<small> $1</small>')}</div></div>
+        <button class="badge-btn" data-badges title="Season badges">${badgeSvg(badge)}<span>${badge ? badgeTitle(badge) : 'No badge yet'}</span></button></div></div>
       <div class="kpi"><div class="l">Earned</div><div class="row"><span class="v">${moneyHtml(earningsCents(minutes, rateCents))}</span>
         <button class="icon-btn" data-eye aria-pressed="${showMoney}" aria-label="${showMoney ? 'Hide' : 'Show'} money" title="${showMoney ? 'Hide' : 'Show'} money">${showMoney ? EYE_OFF : EYE}</button></div></div>
       <div class="kpi"><div class="l">This month</div><div class="row">${status(inMonth)}</div></div>
@@ -39,6 +45,8 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
         ${unpaid.byMonth.map(m => `<button class="um" data-m="${m.month}"><span>${monthName(m.month)}</span>${moneyHtml(m.earningsCents)}</button>`).join('')}</div>
     </div>`;
   el.querySelector('[data-eye]').onclick = actions.toggleMoney;
+  el.querySelector('[data-badges]').onclick = () => openBadges({ season, minutes: seasonMin,
+    seasons: lifetimeStats(lessons, snapshot.seasonStartMonth).perSeason.filter(s => s.minutes).reverse() });
   el.querySelector('[data-pay]')?.addEventListener('click', () => askPaidDate(prev, d => source.markPaid(prev, d)));
   el.querySelector('[data-unpay]')?.addEventListener('click', () => { if (confirm(`Mark ${monthName(prev)} as unpaid?`)) source.markUnpaid(prev); });
   el.querySelectorAll('.um').forEach(b => b.onclick = () => actions.setView(b.dataset.m));

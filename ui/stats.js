@@ -1,6 +1,6 @@
 // Bottom row: the selected month's season as a line (hours per month), a donut (top students) and columns (weekdays).
 import { seasonOf, seasonLabel } from '../domain/seasons.js';
-import { seasonStats, lifetimeStats } from '../domain/stats.js';
+import { seasonStats, lifetimeStats, studentKey } from '../domain/stats.js';
 import { formatHours, monthOf, today } from '../domain/dates.js';
 import { esc } from './html.js';
 
@@ -25,7 +25,7 @@ export function renderStats(el, { snapshot, view, statsLifetime }, actions) {
   if (!s.lessonCount) { [a, d, w].forEach(x => x.innerHTML = `<div class="empty">${statsLifetime ? 'No lessons yet.' : 'No lessons this season.'}</div>`); return; }
   if (statsLifetime) areaChart(a, s.perSeason, seasonLabel(seasonOf(view + '-01', snapshot.seasonStartMonth)), actions);
   else areaChart(a, s.perMonth, view, actions);
-  donut(d, s, statsLifetime ? 'all time' : 'this season');
+  donut(d, s, statsLifetime ? 'all time' : 'this season', name => actions.openStudent(studentKey(name)));
   columns(w, s.weekdayMinutes);
 }
 

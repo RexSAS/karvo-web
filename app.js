@@ -23,6 +23,7 @@ import { openSettings } from './ui/settings.js';
 import { openLinkDialog } from './ui/link.js';
 import { openEventDialog } from './ui/eventDialog.js';
 import { showPhoneScreen } from './ui/phone.js';
+import { openStudent } from './ui/student.js';
 import { students } from './domain/stats.js';
 
 const APP_VERSION = 'web-2';
@@ -45,6 +46,7 @@ export const actions = {
       onSave: text => event ? state.source.updateEvent({ ...event, text }) : state.source.addEvent({ date, text }),
       onDelete: eid => state.source.deleteEvent(eid) });
   },
+  openStudent(key) { openStudent(key, state, actions); },
   setStatsLifetime(on) { state.statsLifetime = on; render(); },
   toggleMoney() {
     state.showMoney = !state.showMoney;

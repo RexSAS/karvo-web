@@ -154,6 +154,30 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
 .leg i { width: 10px; height: 10px; border-radius: 3px; }
 .leg span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .leg span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+/* PC: season badges and the student window */
+.badge-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--muted); font-size: 11px; padding: 4px; border-radius: 12px; max-width: 96px; text-align: center; }
+.badge-btn:hover { background: var(--s5); color: var(--ink); }
+.badge-btn svg { width: 64px; height: 64px; }
+.medal.locked { opacity: .3; }
+.donut .leg button { border-radius: 6px; }
+.donut .leg button:hover { background: var(--s5); }
+dialog.wide { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+dialog.wide h4 { margin: 18px 0 6px; font-size: 13px; font-weight: 600; }
+dialog .sub { color: var(--muted); font-size: 12px; }
+.b-hero { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.b-hero svg { width: 180px; height: 180px; }
+.b-hero h3 { margin-top: 8px; font-size: 24px; }
+.b-next { background: var(--s2); border-radius: 16px; padding: 14px; margin-top: 14px; display: grid; gap: 8px; }
+.bar { height: 10px; border-radius: 999px; background: var(--s5); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--gold); border-radius: inherit; }
+.b-list { background: var(--s2); border-radius: 16px; padding: 4px 14px; }
+.b-row { display: grid; grid-template-columns: 48px 1fr auto; gap: 12px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.b-row:last-child { border: 0; }
+.b-row svg { width: 48px; height: 48px; }
+.st-figs { display: flex; gap: 28px; margin: 12px 0 6px; }
+.st-figs .v { font: 400 24px/1.15 var(--disp); font-variant-numeric: tabular-nums; }
+dialog .chart[data-c="six"] { height: 150px; flex: none; margin-top: 6px; }
+.st-mh { display: flex; justify-content: space-between; margin-top: 12px; }
 #tip { position: fixed; pointer-events: none; background: var(--s5); border: 1px solid var(--outline); border-radius: 8px; padding: 6px 10px; font-size: 12px; display: none; z-index: 5; }
 
 /* Dialogs */
