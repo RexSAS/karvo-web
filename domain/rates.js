@@ -27,6 +27,9 @@ export function pay(rates) {
 
 export const payOf = snapshot => pay(ratesOf(snapshot));
 
+/** The lesson test for a rate filter, or null when there is nothing to filter: no rate picked, or a rate that's gone. */
+export const rateTest = (p, id) => id == null || !p.rates.some(r => r.id === id) ? null : l => p.rateOf(l)?.id === id;
+
 /** The snapshot with [rates] (and rateCents = the default's, for PCs and phones from before rates). */
 const withRates = (s, rates, lessons = s.lessons) =>
   ({ ...s, lessons, rates: sortRates(rates), rateCents: rates.find(r => r.isDefault)?.cents ?? null });

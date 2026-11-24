@@ -16,7 +16,7 @@ import { paintMoney, glint } from './ui/money.js';
 import { pickTextFile } from './ui/files.js';
 import { renderCalendar } from './ui/calendar.js';
 import { renderLessons } from './ui/lessons.js';
-import { fillStatementOnPrint } from './ui/statement.js';
+import { fillStatementOnPrint, printStatement } from './ui/statement.js';
 import { openLessonDialog } from './ui/lessonDialog.js';
 import { payOf } from './domain/rates.js';
 import { renderOverview } from './ui/overview.js';
@@ -35,13 +35,14 @@ const params = new URLSearchParams(location.search);
 const RELAY = /^ws:\/\/localhost(:\d+)?$/.test(params.get('relay') ?? '') ? params.get('relay') : RELAY_URL;
 
 const state = {
-  source: null, unsub: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false, search: '', paidFilter: null,
+  source: null, unsub: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false, search: '', paidFilter: null, rateFilter: null,
   store: null, backup: null, conn: null, pairing: null, link: { paired: false, state: 'offline', peerName: '', phoneNewer: false },
 };
 
 export const actions = {
   setSearch(q) { state.search = q; render(); },
   setPaidFilter(paid) { state.paidFilter = paid; render(); },
+  setRateFilter(id) { state.rateFilter = id; render(); },
   setView(month) { state.view = month; state.selDay = null; render(); },
   selectDay(date) { state.view = monthOf(date); state.selDay = date; render(); },
   editEvent(date, id = null) {
@@ -187,7 +188,9 @@ function startPcUi() {
 addEventListener('resize', render);
 $('settings-btn').onclick = () => openSettings(state.source, () => state.snapshot,
   params.has('demo') ? null : { paired: state.link.paired, peerName: state.link.peerName, unlink: actions.unlink, linkPhone: actions.linkPhone },
-  params.has('demo') || !state.store ? null : { store: state.store, canRestore: state.source.status === 'backup' });
+  params.has('demo') || !state.store ? null : { store: state.store, canRestore: state.source.status === 'backup' },
+  // Every lesson on that rate, from all months, as a statement.
+  rate => printStatement({ ...state, search: '', paidFilter: null, rateFilter: rate.id, rateOnly: true }));
 
 fillStatementOnPrint(() => state);
 

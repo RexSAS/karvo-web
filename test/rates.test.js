@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ratesOf, pay, payOf, saveRate, setDefaultRate, deleteRate, normalizeRates, rateCss } from '../domain/rates.js';
+import { rateTest, ratesOf, pay, payOf, saveRate, setDefaultRate, deleteRate, normalizeRates, rateCss } from '../domain/rates.js';
 import { lessonsToCsv, parseLessonsCsv } from '../domain/csv.js';
 
 const l = (id, minutes, rateId = null) => ({ id, date: '2026-12-0' + id, student: 'A', durationMinutes: minutes, notes: null, paidOn: null, rateId });
@@ -53,3 +53,12 @@ test('CSV keeps each lesson\'s rate by title, ignoring case; unknown titles are 
 });
 
 test('colours: the phone\'s ARGB ints become CSS hex', () => assert.equal(rateCss(0xFF4FA3E0 | 0), '#4fa3e0'));
+
+test('the rate filter keeps one rate\'s lessons (gone rates count as the default)', async () => {
+  const { filterLessons } = await import('../domain/stats.js');
+  const p = payOf(two);
+  assert.deepEqual(filterLessons(two.lessons, '', null, rateTest(p, 1)).map(l => l.id), [1, 3]);
+  assert.deepEqual(filterLessons(two.lessons, '', null, rateTest(p, 2)).map(l => l.id), [2]);
+  assert.equal(rateTest(p, 99), null);
+  assert.equal(rateTest(p, null), null);
+});

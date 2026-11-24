@@ -2,7 +2,7 @@
 // Filled just before printing, so the browser's own Ctrl+P prints it too; styles.css shows only #print on paper.
 import { formatHours, today } from '../domain/dates.js';
 import { formatEuro } from '../domain/earnings.js';
-import { payOf } from '../domain/rates.js';
+import { payOf, rateTest } from '../domain/rates.js';
 import { esc } from './html.js';
 import { shownLessons, isFiltering } from './lessons.js';
 
@@ -21,23 +21,34 @@ export function statementHtml(state) {
   const multiYear = ls.length > 0 && ls[0].date.slice(0, 4) !== ls.at(-1).date.slice(0, 4);
   const minutes = sum(ls), unpaidLs = ls.filter(l => !l.paidOn), unpaid = sum(unpaidLs), withRate = pay.isSet;
   const what = isFiltering(state)
-    ? [state.search.trim() && `“${state.search.trim()}”`, state.paidFilter === false && 'not paid', state.paidFilter === true && 'paid'].filter(Boolean).join(' · ')
+    ? [state.search.trim() && `“${state.search.trim()}”`, state.paidFilter === false && 'not paid', state.paidFilter === true && 'paid',
+      (pay.rates.length > 1 || state.rateOnly) && rateTest(pay, state.rateFilter) && pay.rates.find(r => r.id === state.rateFilter).title].filter(Boolean).join(' · ')
     : monthTitle(state.view);
   const money = cents => cents == null ? '' : `<td class="num">${formatEuro(cents)}</td>`;
+  const rateCol = pay.rates.length > 1 && !state.rateOnly; // with several rates each lesson says its rate (not on one rate's own statement)
   const kpi = (label, value, cls = '') => `<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${value}</div></div>`;
   return `<div class="st-head">${LOGO}<div class="brand">Karvo<small>Ski lesson hours</small></div>
       <div class="doc"><h1>Lesson statement</h1><div>${esc(what)}</div>${ls.length ? `<div class="sub">${day(ls[0].date)} – ${day(ls.at(-1).date)}</div>` : ''}</div></div>
     <div class="kpis">${kpi('Lessons', ls.length)}${kpi('Hours', formatHours(minutes))}${withRate ? kpi('Amount', formatEuro(pay.earnings(ls)), 'main') : ''}${withRate && unpaid ? kpi('Not paid yet', formatEuro(pay.earnings(unpaidLs)), 'owed') : ''}</div>
-    <table><thead><tr><th>Date</th><th>Student</th><th class="num">Hours</th>${withRate ? '<th class="num">Amount</th>' : ''}<th>Payment</th></tr></thead>
+    <table><thead><tr><th>Date</th><th>Student</th>${rateCol ? '<th>Rate</th>' : ''}<th class="num">Hours</th>${withRate ? '<th class="num">Amount</th>' : ''}<th>Payment</th></tr></thead>
     <tbody>${ls.map((l, i) => {
       const first = !i || l.date !== ls[i - 1].date; // the date only on a day's first lesson
-      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(pay.earnings([l]))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
+      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td>${rateCol ? `<td>${esc(pay.titleOf(l))}</td>` : ''}<td class="num">${formatHours(l.durationMinutes)}</td>${money(pay.earnings([l]))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
     }).join('')}
-    <tr class="total"><td colspan="2">Total${withRate && rateNote ? `<span class="rate">${rateNote}</span>` : ''}</td><td class="num">${formatHours(minutes)}</td>${money(pay.earnings(ls))}<td></td></tr></tbody></table>
+    <tr class="total"><td colspan="${rateCol ? 3 : 2}">Total${withRate && rateNote ? `<span class="rate">${rateNote}</span>` : ''}</td><td class="num">${formatHours(minutes)}</td>${money(pay.earnings(ls))}<td></td></tr></tbody></table>
     <div class="st-foot"><span>Printed ${day(today())}</span><span>karvo.rxsas.it</span></div>`;
+}
+
+let pending = null;
+
+/** Prints the statement of [state] (e.g. one rate's lessons) instead of what the Lessons card shows. */
+export function printStatement(state) {
+  pending = state;
+  print();
 }
 
 export function fillStatementOnPrint(getState) {
   const el = document.getElementById('print');
-  addEventListener('beforeprint', () => { el.innerHTML = statementHtml(getState()); });
+  addEventListener('beforeprint', () => { el.innerHTML = statementHtml(pending ?? getState()); });
+  addEventListener('afterprint', () => { pending = null; });
 }

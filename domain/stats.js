@@ -6,10 +6,11 @@ const TOP = 4;
 export const studentKey = name => name.trim().toLowerCase();
 
 /** As Android filterLessons: student or notes contain the query (any case) and, when paid is true/false, that paid state. */
-export function filterLessons(lessons, query, paid = null) {
+/** onRate: null, or a test for the rate filter (domain/rates.js rateTest). */
+export function filterLessons(lessons, query, paid = null, onRate = null) {
   const q = query.trim().toLowerCase();
   return lessons.filter(l => (!q || l.student.toLowerCase().includes(q) || (l.notes ?? '').toLowerCase().includes(q))
-    && (paid == null || !!l.paidOn === paid));
+    && (paid == null || !!l.paidOn === paid) && (!onRate || onRate(l)));
 }
 
 /** One entry per student (case/space-insensitive), named by the most recent lesson; minutes desc, then name. */

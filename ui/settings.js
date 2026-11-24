@@ -40,7 +40,8 @@ const REASONS = { manual: 'Manual', sync: 'Before sync', import: 'Before import'
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /** backups: { store, canRestore } — the PC's own backups (absent in the demo). */
-export function openSettings(source, getSnapshot, link = null, backups = null) {
+/** printRate(rate): prints the statement of every lesson on that rate. */
+export function openSettings(source, getSnapshot, link = null, backups = null, printRate = null) {
   const snapshot = getSnapshot();
   const d = document.createElement('dialog');
   d.style.width = '460px';
@@ -72,8 +73,8 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
   const $ = s => d.querySelector(s);
   // The rates list follows every change (from here, or from the phone while linked).
   const showRates = () => {
-    $('[data-rates]').innerHTML = ratesListHtml(getSnapshot(), tEn);
-    wireRates($('[data-rates]'), { getSnapshot, source, t: tEn, open: openDialog, onError: msg => say(msg, true) });
+    $('[data-rates]').innerHTML = ratesListHtml(getSnapshot(), tEn, true, !!printRate);
+    wireRates($('[data-rates]'), { getSnapshot, source, t: tEn, open: openDialog, onError: msg => say(msg, true), onPrint: printRate });
   };
   const unsubscribe = source.subscribe(showRates);
   const close = () => { unsubscribe(); d.close(); d.remove(); };

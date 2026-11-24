@@ -1,6 +1,6 @@
 // Lessons of the selected month, newest first, grouped by day. With a search or a paid filter: every match, grouped by month.
-import { payOf } from '../domain/rates.js';
-import { rateMarkHtml } from './rates.js';
+import { payOf, rateTest } from '../domain/rates.js';
+import { rateMarkHtml, rateChipsHtml } from './rates.js';
 import { formatHours, monthOf } from '../domain/dates.js';
 import { filterLessons } from '../domain/stats.js';
 import { esc } from './html.js';
@@ -12,11 +12,18 @@ const monthTitle = m => new Date(m + '-15').toLocaleString('en', { month: 'long'
 const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
 const newestFirst = (a, b) => b.date.localeCompare(a.date) || a.id - b.id;
 
-export const isFiltering = ({ search, paidFilter }) => !!search.trim() || paidFilter != null;
+/** The rate filter's lesson test, or null (none picked, the rate is gone, or one rate only: no chips to clear it).
+ *  rateOnly: a rate's own statement (Settings → Print), which filters even with one rate. */
+const rateFilterOf = state => {
+  const pay = payOf(state.snapshot);
+  return pay.rates.length > 1 || state.rateOnly ? rateTest(pay, state.rateFilter) : null;
+};
 
-/** What the Lessons card shows (and what Print prints): the month, or every match of the search and filter. */
+export const isFiltering = state => !!state.search.trim() || state.paidFilter != null || rateFilterOf(state) != null;
+
+/** What the Lessons card shows (and what Print prints): the month, or every match of the search and filters. */
 export const shownLessons = state => (isFiltering(state)
-  ? filterLessons(state.snapshot.lessons, state.search, state.paidFilter)
+  ? filterLessons(state.snapshot.lessons, state.search, state.paidFilter, rateFilterOf(state))
   : state.snapshot.lessons.filter(l => monthOf(l.date) === state.view)).sort(newestFirst);
 
 const row = (l, pay, when = '') => `<button class="lesson" data-id="${l.id}">
@@ -33,7 +40,10 @@ export function renderLessons(el, state, actions) {
   const eventsPanel = selDay && !filtering ? `<div class="day-events"><div class="de-head"><b>${dayTitle(selDay)}</b><button class="btn small" data-event-new ${ro}>+ Event</button></div>
     ${evs.map(e => `<button class="de-row" data-event="${e.id}" ${ro}><span>${esc(e.text)}</span><span class="sub">Edit</span></button>`).join('')}</div>` : '';
   // Each chip counts what it would show with the current search; Not paid wears gold (money owed), Paid a glacier-blue check.
-  const chip = (v, label, mark) => `<button class="chip ${v ? 'paid' : 'unpaid'}" data-paid="${v}" aria-pressed="${paidFilter === v}">${mark}${label}<span class="n">${filterLessons(snapshot.lessons, state.search, v).length}</span></button>`;
+  const onRate = rateFilterOf(state);
+  const chip = (v, label, mark) => `<button class="chip ${v ? 'paid' : 'unpaid'}" data-paid="${v}" aria-pressed="${paidFilter === v}">${mark}${label}<span class="n">${filterLessons(snapshot.lessons, state.search, v, onRate).length}</span></button>`;
+  // With 2+ rates, one chip per rate: its lessons only (with the search and the paid filter).
+  const rateChips = rateChipsHtml(pay, onRate ? state.rateFilter : null, id => filterLessons(snapshot.lessons, state.search, paidFilter, rateTest(pay, id)).length);
   const typing = document.activeElement?.id === 'l-search';
   el.innerHTML = `<div class="l-head"><h2>Lessons · ${filtering ? `${shown.length} found` : month}</h2>
       <button class="icon-btn small" data-print title="Print statement (Ctrl+P)" aria-label="Print statement">
@@ -41,7 +51,7 @@ export function renderLessons(el, state, actions) {
     <label class="l-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="l-search" type="search" placeholder="Search students and notes" aria-label="Search lessons" value="${esc(state.search)}">
       ${state.search ? '<button type="button" class="clear" aria-label="Clear search" title="Clear (Esc)">✕</button>' : '<kbd title="Press / to search">/</kbd>'}</label>
-    <div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}</div>${eventsPanel}
+    <div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}${rateChips}</div>${eventsPanel}
     <div class="scroll" id="lesson-list">${keys.length ? keys.map(k => {
       const ls = shown.filter(l => (filtering ? monthOf(l.date) : l.date) === k);
       return filtering
@@ -57,6 +67,10 @@ export function renderLessons(el, state, actions) {
   el.querySelectorAll('[data-paid]').forEach(b => b.onclick = () => {
     const v = b.dataset.paid === 'true';
     actions.setPaidFilter(paidFilter === v ? null : v);
+  });
+  el.querySelectorAll('[data-rate-filter]').forEach(b => b.onclick = () => {
+    const id = Number(b.dataset.rateFilter);
+    actions.setRateFilter(onRate && state.rateFilter === id ? null : id);
   });
   el.querySelector('[data-print]').onclick = () => print();
   el.querySelector('.add').onclick = actions.add;

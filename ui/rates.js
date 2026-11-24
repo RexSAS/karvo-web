@@ -12,6 +12,12 @@ export function rateMarkHtml(pay, lesson) {
   return r && r !== pay.default ? `<span class="rate-dot" style="background:${rateCss(r.color)}" title="${esc(r.title)}" role="img" aria-label="${esc(r.title)}"></span>` : '';
 }
 
+/** The lesson list's rate filter chips (2+ rates): count(rateId) says how many lessons each would show. */
+export function rateChipsHtml(pay, selected, count) {
+  if (pay.rates.length < 2) return '';
+  return pay.rates.map(r => `<button type="button" class="chip rate" data-rate-filter="${r.id}" aria-pressed="${r.id === selected}">${dot(r.color)}${esc(r.title)}<span class="n">${count(r.id)}</span></button>`).join('');
+}
+
 /** The lesson form's rate flags; only when there's a choice (2+ rates). selectedId null = the default. */
 export function rateFlagsHtml(pay, lesson, t) {
   if (pay.rates.length < 2) return '';
@@ -26,7 +32,8 @@ export const readRateFlag = (form, fallback = null) => {
   return v == null ? fallback : Number(v);
 };
 
-export function ratesListHtml(snapshot, t, canEdit = true) {
+/** printable: the ⋯ menu also offers Print (the PC: a statement of every lesson on that rate). */
+export function ratesListHtml(snapshot, t, canEdit = true, printable = false) {
   const rates = ratesOf(snapshot), dis = canEdit ? '' : 'disabled';
   return `<div class="rates"><div class="rates-h">${esc(t('hourlyRates'))}</div>
     ${rates.length ? '' : `<div class="rates-empty">${esc(t('ratesEmpty'))}</div>`}
@@ -35,18 +42,20 @@ export function ratesListHtml(snapshot, t, canEdit = true) {
       <details class="rate-menu"><summary aria-label="${esc(t('rateOptions', r.title))}" title="${esc(t('rateOptions', r.title))}">⋯</summary><div>
         ${r.isDefault ? '' : `<button type="button" data-rate-default="${r.id}" ${dis}>${esc(t('rateSetDefault'))}</button>`}
         <button type="button" data-rate-edit="${r.id}" ${dis}>${esc(t('edit'))}</button>
+        ${printable ? `<button type="button" data-rate-print="${r.id}">${esc(t('print'))}</button>` : ''}
         <button type="button" data-rate-del="${r.id}" ${r.isDefault && rates.length > 1 || !canEdit ? 'disabled' : ''}>${esc(t('delete'))}</button>
       </div></details></div>`).join('')}
     <button type="button" class="btn small" data-rate-add ${dis}>+ ${esc(t('rateAdd'))}</button></div>`;
 }
 
 /** Wires a list made by ratesListHtml inside el. Failures go to onError(message). */
-export function wireRates(el, { getSnapshot, source, t, open, onError = msg => alert(msg) }) {
+export function wireRates(el, { getSnapshot, source, t, open, onError = msg => alert(msg), onPrint = null }) {
   const find = id => ratesOf(getSnapshot()).find(r => r.id === Number(id));
   const fail = e => onError(e.message);
   const closeMenus = () => el.querySelectorAll('.rate-menu[open]').forEach(m => m.removeAttribute('open'));
   el.querySelectorAll('[data-rate-default]').forEach(b => b.onclick = () => { closeMenus(); source.setDefaultRate(Number(b.dataset.rateDefault)).catch(fail); });
   el.querySelectorAll('[data-rate-edit]').forEach(b => b.onclick = () => { closeMenus(); openRateForm(find(b.dataset.rateEdit)); });
+  el.querySelectorAll('[data-rate-print]').forEach(b => b.onclick = () => { closeMenus(); onPrint?.(find(b.dataset.ratePrint)); });
   el.querySelectorAll('[data-rate-del]').forEach(b => b.onclick = () => {
     closeMenus();
     const rate = find(b.dataset.rateDel), def = ratesOf(getSnapshot()).find(r => r.isDefault && r.id !== rate.id);

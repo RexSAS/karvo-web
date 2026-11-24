@@ -46,7 +46,7 @@ function backdrop() {
   return el;
 }
 
-const state = { tab: 'lessons', snapshot: null, meta: null, search: '', showMoney: false, source: null, store: null, links: null };
+const state = { tab: 'lessons', snapshot: null, meta: null, search: '', rateFilter: null, showMoney: false, source: null, store: null, links: null };
 
 function fatal(message) {
   document.body.className = 'm';
@@ -70,6 +70,7 @@ export const actions = {
   /** A result line in Settings that survives the redraw the change itself causes. */
   flash(text, err = false) { state.flash = { text, err }; render(); },
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
+  setRateFilter(id) { state.rateFilter = id; render(); },
   toggleMoney() { state.showMoney = !state.showMoney; glint(state.showMoney); render(); },
   add() {
     openLessonSheet({ names: students(state.snapshot.lessons).map(s => s.name), pay: payOf(state.snapshot), onSave: l => state.source.addLesson(l) });

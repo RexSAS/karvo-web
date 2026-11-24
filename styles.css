@@ -103,7 +103,7 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minma
 .l-search:focus-within kbd { opacity: 0; }
 .l-search .clear { flex: none; width: 26px; height: 26px; border-radius: 50%; color: var(--muted); font-size: 11px; }
 .l-search .clear:hover { background: var(--s5); color: var(--ink); }
-.chips { display: flex; gap: 8px; flex: none; margin-bottom: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; flex: none; margin-bottom: 10px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: #FFFFFF08; color: var(--muted); font-size: 12px; font-weight: 500;
   transition: background var(--t-short) var(--ease), border-color var(--t-short) var(--ease), color var(--t-short) var(--ease), box-shadow var(--t-short) var(--ease), transform var(--t-short) var(--ease); }
 .chip:hover { background: var(--s5); color: var(--ink); }
@@ -533,3 +533,9 @@ body.m { overflow: hidden; background: var(--bg); }
 .rate-colors label { margin: 0; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; border: 2px solid transparent; cursor: pointer; }
 .rate-colors label .rate-dot { width: 24px; height: 24px; }
 .rate-colors label:has(input:checked) { border-color: var(--ink); }
+
+/* Rate filter chips (2+ rates): the rate's dot; picked, it lights up like the paid ones. */
+.chip.rate .rate-dot { width: 8px; height: 8px; }
+.chip.rate[aria-pressed="true"] { background: var(--s5); border-color: var(--ink); color: var(--ink); }
+.chip.rate[aria-pressed="true"] .n { background: var(--ink); color: var(--s2); }
+.m-chips .chip { min-height: 36px; padding: 6px 8px 6px 12px; font-size: 14px; }

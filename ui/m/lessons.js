@@ -1,6 +1,6 @@
 // Lessons tab: months newest first with their hours, search, and the add/edit/delete sheet.
-import { payOf } from '../../domain/rates.js';
-import { rateMarkHtml, rateFlagsHtml, readRateFlag } from '../rates.js';
+import { payOf, rateTest } from '../../domain/rates.js';
+import { rateMarkHtml, rateFlagsHtml, readRateFlag, rateChipsHtml } from '../rates.js';
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { validateLesson, parseDurationField } from '../../domain/validate.js';
 import { students, filterLessons } from '../../domain/stats.js';
@@ -12,16 +12,19 @@ import { t, locale } from './i18n.js';
 const monthTitle = m => new Date(m + '-15').toLocaleString(locale(), { month: 'long', year: 'numeric' });
 const dayTitle = d => new Date(d + 'T12:00').toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
-export function renderLessons(view, { snapshot, search }, actions) {
-  const list = filterLessons(snapshot.lessons, search)
+export function renderLessons(view, { snapshot, search, rateFilter }, actions) {
+  const pay = payOf(snapshot), onRate = pay.rates.length > 1 ? rateTest(pay, rateFilter) : null;
+  const list = filterLessons(snapshot.lessons, search, null, onRate)
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
-  const months = [...new Set(list.map(l => monthOf(l.date)))], pay = payOf(snapshot);
+  const months = [...new Set(list.map(l => monthOf(l.date)))];
+  // With 2+ rates, one chip per rate under the search: its lessons only.
+  const chips = rateChipsHtml(pay, onRate ? rateFilter : null, id => filterLessons(snapshot.lessons, search, null, rateTest(pay, id)).length);
   const soon = upcomingDays(snapshot.events, today(), 3);
   const when = n => (n === 0 ? t('today') : n === 1 ? t('tomorrow') : t('inDays', n));
-  const eventsCard = search.trim() ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
+  const eventsCard = search.trim() || onRate ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
     ${soon.length ? soon.map(d => d.events.map((e, i) => `<button class="m-event-row" data-event="${e.id}"><span class="d">${i ? '' : esc(when(d.inDays))}</span><span>${esc(e.text)}</span></button>`).join('')).join('')
       : `<p class="m-note">${esc(t('noEventsSoon'))}</p>`}</div>`;
-  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${eventsCard}
+  view.innerHTML = `<input class="m-search" type="search" placeholder="${esc(t('search'))}" value="${esc(search)}" aria-label="${esc(t('search'))}">${chips ? `<div class="chips m-chips">${chips}</div>` : ''}${eventsCard}
     ${months.length ? months.map(m => {
       const ls = list.filter(l => monthOf(l.date) === m);
       return `<div class="m-month"><span>${esc(monthTitle(m))}</span><span>${formatHours(ls.reduce((s, l) => s + l.durationMinutes, 0))}</span></div>
@@ -33,6 +36,8 @@ export function renderLessons(view, { snapshot, search }, actions) {
   const input = view.querySelector('.m-search');
   input.oninput = () => actions.setSearch(input.value);
   view.onclick = e => {
+    const r = e.target.closest('[data-rate-filter]');
+    if (r) { const id = Number(r.dataset.rateFilter); return actions.setRateFilter(onRate && rateFilter === id ? null : id); }
     const n = e.target.closest('[data-event],[data-event-new]');
     if (n) return actions.editEvent(n.dataset.event ? Number(n.dataset.event) : null);
     const b = e.target.closest('.m-row'); if (b) actions.edit(snapshot.lessons.find(l => l.id === Number(b.dataset.id)));
