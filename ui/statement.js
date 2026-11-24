@@ -15,9 +15,9 @@ const LOGO = `<svg class="logo" viewBox="18 24.5 72 54" aria-hidden="true"><circ
 export function statementHtml(state) {
   const ls = shownLessons(state).reverse(); // oldest first, as on a bill
   const pay = payOf(state.snapshot), sum = xs => xs.reduce((s, l) => s + l.durationMinutes, 0);
-  // The rates these lessons use, for the Total line ("€30 per hour", or each rate by name when there are several).
+  // The rates these lessons use, for the Total line: "€30 per hour", or each amount ("€30/h · €45/h") when there are several.
   const used = [...new Set(ls.map(l => pay.rateOf(l)))].filter(Boolean);
-  const rateNote = used.length === 1 ? `${formatEuro(used[0].cents)} per hour` : used.map(r => `${esc(r.title)} ${formatEuro(r.cents)}/h`).join(' · ');
+  const rateNote = used.length === 1 ? `${formatEuro(used[0].cents)} per hour` : used.map(r => `${formatEuro(r.cents)}/h`).join(' · ');
   const multiYear = ls.length > 0 && ls[0].date.slice(0, 4) !== ls.at(-1).date.slice(0, 4);
   const minutes = sum(ls), unpaidLs = ls.filter(l => !l.paidOn), unpaid = sum(unpaidLs), withRate = pay.isSet;
   const what = isFiltering(state)
@@ -25,15 +25,15 @@ export function statementHtml(state) {
       (pay.rates.length > 1 || state.rateOnly) && rateTest(pay, state.rateFilter) && pay.rates.find(r => r.id === state.rateFilter).title].filter(Boolean).join(' · ')
     : monthTitle(state.view);
   const money = cents => cents == null ? '' : `<td class="num">${formatEuro(cents)}</td>`;
-  const rateCol = pay.rates.length > 1 && !state.rateOnly; // with several rates each lesson says its rate (not on one rate's own statement)
+  const rateCol = pay.rates.length > 1 && !state.rateOnly; // with several rates each lesson shows its hourly amount (not on one rate's own statement)
   const kpi = (label, value, cls = '') => `<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${value}</div></div>`;
   return `<div class="st-head">${LOGO}<div class="brand">Karvo<small>Ski lesson hours</small></div>
       <div class="doc"><h1>Lesson statement</h1><div>${esc(what)}</div>${ls.length ? `<div class="sub">${day(ls[0].date)} – ${day(ls.at(-1).date)}</div>` : ''}</div></div>
     <div class="kpis">${kpi('Lessons', ls.length)}${kpi('Hours', formatHours(minutes))}${withRate ? kpi('Amount', formatEuro(pay.earnings(ls)), 'main') : ''}${withRate && unpaid ? kpi('Not paid yet', formatEuro(pay.earnings(unpaidLs)), 'owed') : ''}</div>
-    <table><thead><tr><th>Date</th><th>Student</th>${rateCol ? '<th>Rate</th>' : ''}<th class="num">Hours</th>${withRate ? '<th class="num">Amount</th>' : ''}<th>Payment</th></tr></thead>
+    <table><thead><tr><th>Date</th><th>Student</th>${rateCol ? '<th class="num">Rate</th>' : ''}<th class="num">Hours</th>${withRate ? '<th class="num">Amount</th>' : ''}<th>Payment</th></tr></thead>
     <tbody>${ls.map((l, i) => {
       const first = !i || l.date !== ls[i - 1].date; // the date only on a day's first lesson
-      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td>${rateCol ? `<td>${esc(pay.titleOf(l))}</td>` : ''}<td class="num">${formatHours(l.durationMinutes)}</td>${money(pay.earnings([l]))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
+      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td>${rateCol ? `<td class="num">${formatEuro(pay.rateOf(l).cents)}/h</td>` : ''}<td class="num">${formatHours(l.durationMinutes)}</td>${money(pay.earnings([l]))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
     }).join('')}
     <tr class="total"><td colspan="${rateCol ? 3 : 2}">Total${withRate && rateNote ? `<span class="rate">${rateNote}</span>` : ''}</td><td class="num">${formatHours(minutes)}</td>${money(pay.earnings(ls))}<td></td></tr></tbody></table>
     <div class="st-foot"><span>Printed ${day(today())}</span><span>karvo.rxsas.it</span></div>`;
