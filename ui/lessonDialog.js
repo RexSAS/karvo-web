@@ -2,10 +2,14 @@
 import { validateLesson, parseDurationField } from '../domain/validate.js';
 import { esc } from './html.js';
 import { READ_ONLY_TIP } from './lessons.js';
+import { rateFlagsHtml, readRateFlag } from './rates.js';
+import { STRINGS } from './m/i18n.js';
+
+const tEn = key => STRINGS.en[key] ?? key;
 
 const MESSAGES = { StudentBlank: 'Enter a student name', DurationZero: 'Duration must be more than 0', DurationTooLong: 'Max 24 hours', MinutesOver59: 'Minutes must be 0–59' };
 
-export function openLessonDialog({ lesson = null, defaultDate, studentNames, readOnly, onSave, onDelete }) {
+export function openLessonDialog({ lesson = null, defaultDate, studentNames, readOnly, pay, onSave, onDelete }) {
   const d = document.createElement('dialog');
   const dis = readOnly ? 'disabled' : '';
   d.innerHTML = `<form method="dialog" novalidate>
@@ -17,6 +21,7 @@ export function openLessonDialog({ lesson = null, defaultDate, studentNames, rea
       <div><label for="l-h">Hours</label><input type="number" id="l-h" min="0" max="24" value="${lesson ? Math.floor(lesson.durationMinutes / 60) : 1}" ${dis}></div>
       <div><label for="l-m">Minutes</label><input type="number" id="l-m" min="0" max="59" step="5" value="${lesson ? lesson.durationMinutes % 60 : 0}" ${dis}></div>
     </div>
+    ${rateFlagsHtml(pay, lesson, tEn).replace(/<input /g, `<input ${dis} `)}
     <label for="l-notes">Notes</label><textarea id="l-notes" ${dis}>${esc(lesson?.notes ?? '')}</textarea>
     <div class="err" role="alert"></div>
     <div class="btns">
@@ -40,7 +45,8 @@ export function openLessonDialog({ lesson = null, defaultDate, studentNames, rea
     const errors = validateLesson(student, h, m);
     if (!date) { err.textContent = 'Pick a date'; return; }
     if (errors.length) { err.textContent = errors.map(x => MESSAGES[x]).join(' · '); return; }
-    run(() => onSave({ ...(lesson ?? { paidOn: null }), date, student: student.trim(), durationMinutes: h * 60 + m, notes: $('#l-notes').value.trim() || null }));
+    run(() => onSave({ ...(lesson ?? { paidOn: null }), date, student: student.trim(), durationMinutes: h * 60 + m, notes: $('#l-notes').value.trim() || null,
+      rateId: readRateFlag(d, lesson?.rateId ?? null) }));
   };
   d.showModal();
   if (!readOnly) $('#l-student').focus();

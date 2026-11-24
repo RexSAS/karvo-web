@@ -2,9 +2,12 @@
 // Commands go to the phone; the screen only changes when the phone sends a new snapshot.
 import { parseLessonsCsv } from '../domain/csv.js';
 import { normalizeEvents } from '../domain/events.js';
+import { normalizeRates, ratesOf, payOf } from '../domain/rates.js';
+
+const OLD_PHONE = 'Update Karvo on your phone to use several rates';
 
 export function createLinkedSource(connection, store, { initial = null, timeoutMs = 15000, peerName = '' } = {}) {
-  let snapshot = initial && normalizeEvents(initial), nextId = 1;
+  let snapshot = initial && normalizeRates(normalizeEvents(initial)), nextId = 1, oldPhone = false;
   const subs = new Set(), pending = new Map();
   const src = { status: 'linked', canEdit: true, peerName, storageError: false };
 
@@ -14,7 +17,9 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
   connection.on('message', async msg => {
     if (msg.t === 'snapshot') {
       const { lessons, rateCents, seasonStartMonth, timeZoneId, events = [] } = msg; // a 3.1 phone sends no events
-      snapshot = { lessons, rateCents, seasonStartMonth, timeZoneId, events, syncedAt: new Date().toISOString() };
+      // A phone from before 3.8 sends one rateCents and no rates: ratesOf makes it one default rate.
+      oldPhone = !Array.isArray(msg.rates);
+      snapshot = { lessons, rates: ratesOf(msg), rateCents, seasonStartMonth, timeZoneId, events, syncedAt: new Date().toISOString() };
       subs.forEach(fn => fn(snapshot));
       try { await store?.save(snapshot); src.storageError = false; } catch { src.storageError = true; }
     } else if (msg.t === 'ack') {
@@ -47,12 +52,17 @@ export function createLinkedSource(connection, store, { initial = null, timeoutM
     deleteLesson: id => command('deleteLesson', { id }),
     markPaid: (month, paidOn) => command('markPaid', { month, paidOn }),
     markUnpaid: month => command('markUnpaid', { month }),
-    setRate: rateCents => command('setRate', { rateCents }),
+    // A phone from before 3.8 has one rate: its amount can still be changed (setRate), nothing else.
+    saveRate: rate => !oldPhone ? command('saveRate', { rate })
+      : snapshot?.rates.length && rate.id === snapshot.rates[0].id || !snapshot?.rates.length ? command('setRate', { rateCents: rate.cents })
+      : Promise.reject(new Error(OLD_PHONE)),
+    setDefaultRate: id => oldPhone ? Promise.reject(new Error(OLD_PHONE)) : command('setDefaultRate', { id }),
+    deleteRate: id => !oldPhone ? command('deleteRate', { id }) : command('setRate', { rateCents: null }),
     setSeasonStart: month => command('setSeasonStart', { month }),
     addEvent: event => command('addEvent', { event }),
     updateEvent: event => command('updateEvent', { event }),
     deleteEvent: id => command('deleteEvent', { id }),
-    importCsv: async text => command('importLessons', { lessons: parseLessonsCsv(text) }),
+    importCsv: async text => command('importLessons', { lessons: parseLessonsCsv(text, payOf(snapshot ?? {}).idOfTitle) }),
     restoreAll: (lessons, events = []) => command('restoreAll', { lessons, events: events.map(({ date, text }) => ({ date, text })) }),
   });
 }

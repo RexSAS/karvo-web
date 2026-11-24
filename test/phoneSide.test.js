@@ -5,7 +5,7 @@ import { createSource, emptySnapshot } from '../source/core.js';
 
 const text = k => k;
 const anna = { id: 1, date: '2026-01-05', durationMinutes: 60, student: 'Anna', notes: null, paidOn: null };
-const data = (lessons = [anna]) => ({ ...emptySnapshot(), lessons, rateCents: 3000, timeZoneId: 'Europe/Rome' });
+const data = (lessons = [anna]) => ({ ...emptySnapshot(), lessons, rates: [{ id: 1, title: 'Standard', cents: 3000, color: 0, isDefault: true }], rateCents: 3000, timeZoneId: 'Europe/Rome' });
 const lesson = (o = {}) => ({ id: 0, date: '2026-01-06', durationMinutes: 90, student: 'Bo', notes: null, paidOn: null, ...o });
 const refused = (d, op, args) => { try { applyCommand(d, op, args, text); } catch (e) { assert.ok(e instanceof Refused); return e.message; } assert.fail('not refused'); };
 
@@ -39,6 +39,22 @@ test('missing lessons, months, rate, season start', () => {
   assert.equal(applyCommand(d, 'setSeasonStart', { month: 12 }, text).data.seasonStartMonth, 12);
   assert.equal(refused(d, 'setSeasonStart', { month: 13 }), 'invalidMonth');
   assert.equal(refused(d, 'format', {}), 'unknownCommand');
+});
+
+test('rates: add, edit, make default, delete; an update without rateId keeps the lesson\'s rate', () => {
+  let d = applyCommand(data(), 'saveRate', { rate: { title: ' Private ', cents: 4500, color: 7 } }, text).data;
+  assert.deepEqual(d.rates.map(r => [r.id, r.title, r.isDefault]), [[1, 'Standard', true], [2, 'Private', false]]);
+  assert.equal(refused(d, 'saveRate', { rate: { title: 'X', cents: 0, color: 1 } }), 'invalidRate');
+  assert.equal(refused(d, 'saveRate', { rate: { title: ' ', cents: 100, color: 1 } }), 'invalidData');
+  d = applyCommand(d, 'updateLesson', { lesson: { ...anna, rateId: 2 } }, text).data;
+  const { rateId, ...old } = anna; // a PC from before rates
+  d = applyCommand(d, 'updateLesson', { lesson: { ...old, durationMinutes: 30 } }, text).data;
+  assert.equal(d.lessons[0].rateId, 2);
+  assert.equal(refused(d, 'deleteRate', { id: 1 }), 'invalidData'); // the default, not the last
+  d = applyCommand(d, 'setDefaultRate', { id: 2 }, text).data;
+  d = applyCommand(d, 'deleteRate', { id: 1 }, text).data;
+  assert.deepEqual(d.rates.map(r => r.id), [2]);
+  assert.equal(d.rateCents, 4500);
 });
 
 test('import counts duplicates like Android, restore only into an empty phone', () => {

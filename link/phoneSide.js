@@ -5,6 +5,7 @@ import { planImport } from '../domain/importPlan.js';
 import { validateLesson, MAX_DURATION_MINUTES } from '../domain/validate.js';
 import { createConnection, deleteRoom, RELAY_URL } from './connection.js';
 import { addEvent, updateEvent, deleteEvent, mergeEvents, MAX_EVENT } from '../domain/events.js';
+import { ratesOf, saveRate, setDefaultRate, deleteRate, RATE_COLORS } from '../domain/rates.js';
 
 export class Refused extends Error {}
 
@@ -16,13 +17,14 @@ const isDate = s => {
 
 function checkLesson(l, text) {
   if (!l || typeof l !== 'object' || !isDate(l.date) || typeof l.student !== 'string' || !Number.isInteger(l.durationMinutes)
-    || l.durationMinutes < 0 || (l.paidOn != null && !isDate(l.paidOn)) || (l.notes != null && typeof l.notes !== 'string'))
+    || l.durationMinutes < 0 || (l.paidOn != null && !isDate(l.paidOn)) || (l.notes != null && typeof l.notes !== 'string')
+    || (l.rateId != null && !Number.isInteger(l.rateId)))
     throw new Refused(text('invalidData'));
   const m = l.durationMinutes;
   const errors = validateLesson(l.student, Math.floor(m / 60), m % 60);
   if (m > MAX_DURATION_MINUTES && !errors.includes('DurationTooLong')) errors.push('DurationTooLong');
   if (errors.length) throw new Refused(errors.map(text).join(' · '));
-  return { id: l.id, date: l.date, durationMinutes: m, student: l.student.trim(), notes: l.notes?.trim() || null, paidOn: l.paidOn ?? null };
+  return { id: l.id, date: l.date, durationMinutes: m, student: l.student.trim(), notes: l.notes?.trim() || null, paidOn: l.paidOn ?? null, rateId: l.rateId ?? null };
 }
 
 function checkEvent(e, text) {
@@ -43,8 +45,11 @@ export function applyCommand(data, op, args, text) {
     case 'addLesson': return { data: { ...data, lessons: [...lessons, ...withIds(lessons, [checkLesson(a.lesson, text)])] } };
     case 'updateLesson': {
       const l = checkLesson(a.lesson, text);
-      if (!lessons.some(x => x.id === l.id)) throw new Refused(text('lessonGone'));
-      return { data: { ...data, lessons: lessons.map(x => x.id === l.id ? l : x) } };
+      const old = lessons.find(x => x.id === l.id);
+      if (!old) throw new Refused(text('lessonGone'));
+      // A PC from before rates sends no rateId: the lesson keeps its rate.
+      const kept = 'rateId' in a.lesson ? l : { ...l, rateId: old.rateId ?? null };
+      return { data: { ...data, lessons: lessons.map(x => x.id === l.id ? kept : x) } };
     }
     case 'deleteLesson':
       if (!lessons.some(x => x.id === a.id)) throw new Refused(text('lessonGone'));
@@ -53,9 +58,24 @@ export function applyCommand(data, op, args, text) {
       if (!isDate(a.paidOn)) throw new Refused(text('invalidData'));
       return { data: { ...data, lessons: markPaid(lessons, month(a.month), a.paidOn) } };
     case 'markUnpaid': return { data: { ...data, lessons: markUnpaid(lessons, month(a.month)) } };
-    case 'setRate':
+    case 'setRate': { // a PC from before rates sets its one rate: the default here (cleared = removed if it's the last)
       if (a.rateCents !== null && !(Number.isInteger(a.rateCents) && a.rateCents > 0)) throw new Refused(text('invalidRate'));
-      return { data: { ...data, rateCents: a.rateCents } };
+      const def = ratesOf(data).find(r => r.isDefault);
+      const next = a.rateCents === null ? (def ? deleteRate(data, def.id) : data)
+        : saveRate(data, def ? { ...def, cents: a.rateCents } : { title: 'Standard', cents: a.rateCents, color: RATE_COLORS[0] });
+      return { data: next ?? data };
+    }
+    case 'saveRate': {
+      const next = saveRate(data, a.rate);
+      if (!next) throw new Refused(text(Number.isInteger(a.rate?.cents) && a.rate.cents <= 0 ? 'invalidRate' : 'invalidData'));
+      return { data: next };
+    }
+    case 'setDefaultRate': return { data: setDefaultRate(data, a.id) };
+    case 'deleteRate': {
+      const next = deleteRate(data, a.id);
+      if (!next) throw new Refused(text('invalidData'));
+      return { data: next };
+    }
     case 'setSeasonStart':
       if (!(Number.isInteger(a.month) && a.month >= 1 && a.month <= 12)) throw new Refused(text('invalidMonth'));
       return { data: { ...data, seasonStartMonth: a.month } };
@@ -85,7 +105,7 @@ export function applyCommand(data, op, args, text) {
   }
 }
 
-const snapshotOf = d => ({ lessons: d.lessons, rateCents: d.rateCents, seasonStartMonth: d.seasonStartMonth, events: d.events ?? [],
+const snapshotOf = d => ({ lessons: d.lessons, rates: ratesOf(d), rateCents: ratesOf(d).find(r => r.isDefault)?.cents ?? null, seasonStartMonth: d.seasonStartMonth, events: d.events ?? [],
   timeZoneId: d.timeZoneId ?? Intl.DateTimeFormat().resolvedOptions().timeZone });
 
 /**

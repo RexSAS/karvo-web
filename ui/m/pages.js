@@ -2,7 +2,7 @@
 import { BADGES, badgeProgress } from '../../domain/badges.js';
 import { seasonOf, seasonLabel, seasonMonths } from '../../domain/seasons.js';
 import { studentDetail } from '../../domain/stats.js';
-import { earningsCents } from '../../domain/earnings.js';
+import { payOf } from '../../domain/rates.js';
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { badgeSvg } from '../badge.js';
 import { moneyHtml, paintMoney } from '../money.js';
@@ -47,16 +47,16 @@ export function renderBadges(view, { snapshot }) {
 
 /** One student: totals (money behind the eye), last 6 months, this season vs last, and their lessons by month. */
 export function renderStudent(view, state, actions) {
-  const { lessons, seasonStartMonth, rateCents } = state.snapshot;
+  const { lessons, seasonStartMonth } = state.snapshot, pay = payOf(state.snapshot);
   const d = studentDetail(lessons, state.page.key, today(), seasonStartMonth);
   if (!d) { view.innerHTML = `<p class="m-note">${esc(t('studentGone'))}</p>`; return; }
   view.innerHTML = `<div class="m-card m-hero m-student"><div class="m-kpis">
       <div><div class="l">${esc(t('totalHours'))}</div><div class="v">${formatHours(d.totalMinutes).replace(/ (h|min)/g, '<small> $1</small>')}</div></div>
       <div><div class="l">${esc(t('lessons'))}</div><div class="v">${d.lessonCount}</div></div>
       <div><div class="l">${esc(t('avgLesson'))}</div><div class="v">${formatHours(d.averageMinutes)}</div></div>
-      ${rateCents != null ? `<div><div class="l">${esc(t('earnings'))}</div><div class="v">${moneyHtml(earningsCents(d.totalMinutes, rateCents), 'gold')}</div></div>` : ''}
+      ${pay.isSet ? `<div><div class="l">${esc(t('earnings'))}</div><div class="v">${moneyHtml(pay.earnings(d.months.flatMap(m => m.lessons)), 'gold')}</div></div>` : ''}
     </div><p class="m-note">${esc(t('firstLast', shortDate(d.firstLesson), shortDate(d.lastLesson)))}</p>
-    ${rateCents != null ? `<div class="row"><button class="btn small" data-eye>${esc(state.showMoney ? t('hideMoney') : t('showMoney'))}</button></div>` : ''}</div>
+    ${pay.isSet ? `<div class="row"><button class="btn small" data-eye>${esc(state.showMoney ? t('hideMoney') : t('showMoney'))}</button></div>` : ''}</div>
     <div class="m-card"><h2>${esc(t('lastSixMonths'))}</h2><div class="m-chart" data-c="six"></div></div>
     <div class="m-card"><div class="m-kpis">
       <div><div class="l">${esc(t('thisSeasonLabel', seasonLabel(d.season)))}</div><div class="v">${formatHours(d.thisSeasonMinutes)}</div></div>

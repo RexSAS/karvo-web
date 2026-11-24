@@ -18,6 +18,7 @@ import { renderCalendar } from './ui/calendar.js';
 import { renderLessons } from './ui/lessons.js';
 import { fillStatementOnPrint } from './ui/statement.js';
 import { openLessonDialog } from './ui/lessonDialog.js';
+import { payOf } from './domain/rates.js';
 import { renderOverview } from './ui/overview.js';
 import { renderStats } from './ui/stats.js';
 import { openSettings } from './ui/settings.js';
@@ -60,11 +61,11 @@ export const actions = {
   },
   add() {
     openLessonDialog({ defaultDate: state.selDay ?? (state.view === monthOf(today()) ? today() : state.view + '-01'),
-      studentNames: students(state.snapshot.lessons).map(s => s.name), readOnly: false,
+      studentNames: students(state.snapshot.lessons).map(s => s.name), readOnly: false, pay: payOf(state.snapshot),
       onSave: async l => { await state.source.addLesson(l); actions.selectDay(l.date); } });
   },
   edit(lesson) {
-    openLessonDialog({ lesson, studentNames: students(state.snapshot.lessons).map(s => s.name), readOnly: !state.source.canEdit,
+    openLessonDialog({ lesson, studentNames: students(state.snapshot.lessons).map(s => s.name), readOnly: !state.source.canEdit, pay: payOf(state.snapshot),
       onSave: l => state.source.updateLesson(l), onDelete: id => state.source.deleteLesson(id) });
   },
   async importCsv() {

@@ -3,8 +3,9 @@ import { markPaid, markUnpaid } from '../domain/paid.js';
 import { parseLessonsCsv } from '../domain/csv.js';
 import { planImport } from '../domain/importPlan.js';
 import { addEvent, updateEvent, deleteEvent, normalizeEvents, MAX_EVENT } from '../domain/events.js';
+import { normalizeRates, payOf, saveRate, setDefaultRate, deleteRate } from '../domain/rates.js';
 
-export const emptySnapshot = () => ({ lessons: [], rateCents: null, seasonStartMonth: 12, syncedAt: null, events: [] });
+export const emptySnapshot = () => ({ lessons: [], rates: [], rateCents: null, seasonStartMonth: 12, syncedAt: null, events: [] });
 
 // strict (the iPhone, where this is the only copy): a failed save rejects and keeps the previous snapshot.
 function checkEvent({ text }) {
@@ -12,7 +13,7 @@ function checkEvent({ text }) {
 }
 
 export function createSource({ status, canEdit, initial, store = null, strict = false }) {
-  let snapshot = normalizeEvents(initial); // copies saved before events had one note per day
+  let snapshot = normalizeRates(normalizeEvents(initial)); // copies saved before events had one note per day, or before rates
   const subs = new Set();
   // Every change runs in one queue and is built from the latest snapshot inside it: two changes at the same moment
   // (two PCs, or a PC and the iPhone) never build on the same old copy.
@@ -39,6 +40,9 @@ export function createSource({ status, canEdit, initial, store = null, strict = 
     if (!canEdit) throw new Error('read-only');
     return serial(() => commit({ ...snapshot, lessons: change(snapshot.lessons, ...args) }));
   };
+  // Like the season start, rates stay editable on a read-only copy: they change no lesson's hours.
+  const rateEdit = (change, refusal) =>
+    serial(() => { const next = change(snapshot); if (!next) throw new Error(refusal); return commit(next); });
   const nextId = lessons => Math.max(0, ...lessons.map(l => l.id)) + 1;
 
   return Object.assign(src, {
@@ -50,14 +54,17 @@ export function createSource({ status, canEdit, initial, store = null, strict = 
     deleteLesson: edit((ls, id) => ls.filter(x => x.id !== id)),
     markPaid: edit((ls, month, paidOn) => markPaid(ls, month, paidOn)),
     markUnpaid: edit((ls, month) => markUnpaid(ls, month)),
-    setRate: rateCents => serial(() => commit({ ...snapshot, rateCents })),
+    // Rates: same rules as the phone (domain/rates.js); a refused edit throws with the reason.
+    saveRate: rate => rateEdit(s => saveRate(s, rate), 'Enter a name and a rate like 30 or 27.50'),
+    setDefaultRate: id => rateEdit(s => setDefaultRate(s, id), 'That rate is gone'),
+    deleteRate: id => rateEdit(s => deleteRate(s, id), 'Make another rate the default first'),
     // Events: several per day.
     addEvent: async ev => { if (!canEdit) throw new Error('read-only'); checkEvent(ev); return serial(() => commit({ ...snapshot, events: addEvent(snapshot.events, ev) })); },
     updateEvent: async ev => { if (!canEdit) throw new Error('read-only'); checkEvent(ev); return serial(() => commit({ ...snapshot, events: updateEvent(snapshot.events, ev) })); },
     deleteEvent: async id => { if (!canEdit) throw new Error('read-only'); return serial(() => commit({ ...snapshot, events: deleteEvent(snapshot.events, id) })); },
     setSeasonStart: seasonStartMonth => serial(() => commit({ ...snapshot, seasonStartMonth })),
     async importCsv(text) {
-      const incoming = parseLessonsCsv(text);
+      const incoming = parseLessonsCsv(text, payOf(snapshot).idOfTitle);
       return serial(async () => {
         const { toAdd, skipped } = planImport(snapshot.lessons, incoming);
         let id = nextId(snapshot.lessons);

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paidStatus, monthPaidOn, markPaid, markUnpaid, unpaidTotals } from '../domain/paid.js';
+import { pay, ratesOf } from '../domain/rates.js';
 
 const L = (id, date, paidOn = null, durationMinutes = 60) => ({ id, date, durationMinutes, student: 'A', notes: null, paidOn });
 
@@ -24,13 +25,13 @@ test('markUnpaid clears the whole month', () =>
   assert.deepEqual(markUnpaid([L(1, '2026-01-01', '2026-01-10'), L(2, '2026-02-01', '2026-03-01')], '2026-01').map(l => l.paidOn), [null, '2026-03-01']));
 
 test('future lessons are not owed yet', () => {
-  const u = unpaidTotals([L(1, '2026-11-20')], '2026-11-07', 3000);
+  const u = unpaidTotals([L(1, '2026-11-20')], '2026-11-07', pay(ratesOf({ rateCents: 3000 })));
   assert.equal(u.minutes, 0);
   assert.equal(u.months, 0);
 });
 
 test('unpaid totals by month, oldest first', () => {
-  const u = unpaidTotals([L(1, '2026-02-01'), L(2, '2026-01-05', null, 90), L(3, '2026-01-06', '2026-02-01')], '2026-11-07', 3000);
+  const u = unpaidTotals([L(1, '2026-02-01'), L(2, '2026-01-05', null, 90), L(3, '2026-01-06', '2026-02-01')], '2026-11-07', pay(ratesOf({ rateCents: 3000 })));
   assert.equal(u.months, 2);
   assert.equal(u.minutes, 150);
   assert.equal(u.earningsCents, 7500);
@@ -38,4 +39,4 @@ test('unpaid totals by month, oldest first', () => {
   assert.equal(u.byMonth[0].earningsCents, 4500);
 });
 
-test('unpaid totals without rate', () => assert.equal(unpaidTotals([L(1, '2026-01-01')], '2026-11-07', null).earningsCents, null));
+test('unpaid totals without rate', () => assert.equal(unpaidTotals([L(1, '2026-01-01')], '2026-11-07', pay([])).earningsCents, null));

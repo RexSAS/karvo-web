@@ -1,5 +1,5 @@
 // Right column: the selected month's hours, money and payment, plus everything still unpaid.
-import { earningsCents } from '../domain/earnings.js';
+import { payOf } from '../domain/rates.js';
 import { formatHours, monthOf, today, todayIn, addMonths } from '../domain/dates.js';
 import { paidStatus, monthPaidOn, unpaidTotals } from '../domain/paid.js';
 import { students, seasonStats, lifetimeStats } from '../domain/stats.js';
@@ -15,8 +15,8 @@ const monthName = (m, opts = { month: 'long', year: 'numeric' }) => new Date(m +
 const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
 
 export function renderOverview(el, { snapshot, view, showMoney, source }, actions) {
-  const { lessons, rateCents } = snapshot, inMonth = lessons.filter(l => monthOf(l.date) === view);
-  const minutes = sum(inMonth), unpaid = unpaidTotals(lessons, snapshot.timeZoneId ? todayIn(snapshot.timeZoneId) : today(), rateCents);
+  const { lessons } = snapshot, pay = payOf(snapshot), inMonth = lessons.filter(l => monthOf(l.date) === view);
+  const minutes = sum(inMonth), unpaid = unpaidTotals(lessons, snapshot.timeZoneId ? todayIn(snapshot.timeZoneId) : today(), pay);
   const ro = source.canEdit ? '' : `disabled title="${READ_ONLY_TIP}"`;
   // The school pays a month after it ends, so the pay button sits on the month before the selected one.
   const prev = addMonths(view, -1), inPrev = lessons.filter(l => monthOf(l.date) === prev);
@@ -24,7 +24,7 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
     if (!ls.length) return '<span class="sub">No lessons</span>';
     const st = paidStatus(ls);
     return st === 'PAID' ? `<span>✓ Paid ${new Date(monthPaidOn(ls) + 'T12:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })}</span>`
-      : `<span><span class="gold">${st === 'PARTLY_PAID' ? 'Partly paid' : 'Unpaid'} · </span>${moneyHtml(earningsCents(sum(ls.filter(l => !l.paidOn)), rateCents), 'gold')}</span>`;
+      : `<span><span class="gold">${st === 'PARTLY_PAID' ? 'Partly paid' : 'Unpaid'} · </span>${moneyHtml(pay.earnings(ls.filter(l => !l.paidOn)), 'gold')}</span>`;
   };
   const payBtn = !inPrev.length ? '' : paidStatus(inPrev) === 'PAID'
     ? `<button class="btn small" data-unpay ${ro}>Mark unpaid</button>`
@@ -35,7 +35,7 @@ export function renderOverview(el, { snapshot, view, showMoney, source }, action
     <div class="scroll">
       <div class="kpi"><div class="row"><div><div class="l">Hours</div><div class="v">${formatHours(minutes).replace(/ (h|min)/g, '<small> $1</small>')}</div></div>
         <button class="badge-btn" data-badges title="Season badges">${badgeSvg(badge)}<span>${badge ? badgeTitle(badge) : 'No badge yet'}</span></button></div></div>
-      <div class="kpi"><div class="l">Earned</div><div class="row"><span class="v">${moneyHtml(earningsCents(minutes, rateCents))}</span>
+      <div class="kpi"><div class="l">Earned</div><div class="row"><span class="v">${moneyHtml(pay.earnings(inMonth))}</span>
         <button class="icon-btn" data-eye aria-pressed="${showMoney}" aria-label="${showMoney ? 'Hide' : 'Show'} money" title="${showMoney ? 'Hide' : 'Show'} money">${showMoney ? EYE_OFF : EYE}</button></div></div>
       <div class="kpi"><div class="l">This month</div><div class="row">${status(inMonth)}</div></div>
       <div class="kpi"><div class="l">Last month · ${monthName(prev, { month: 'long' })}</div><div class="row">${status(inPrev)}${payBtn}</div></div>

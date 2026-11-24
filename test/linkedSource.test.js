@@ -63,7 +63,7 @@ test('a snapshot before the ack is shown and the command still resolves', async 
 
 test('losing the phone while waiting rejects with Phone disconnected', async () => {
   const c = fakeConnection(), src = createLinkedSource(c, fakeStore());
-  const p = src.setRate(2500); await tick();
+  const p = src.saveRate({ title: 'Private', cents: 2500, color: 1 }); await tick();
   c.emit('state', 'offline');
   await assert.rejects(p, /Phone disconnected/);
 });
@@ -122,4 +122,13 @@ test('declining restore keeps the backup; once the phone has had lessons, deleti
 test('a timeout says the phone did not answer, not that the change failed', async () => {
   const c = fakeConnection(), src = createLinkedSource(c, fakeStore(), { timeoutMs: 20 });
   await assert.rejects(src.addLesson(L), /No answer from the phone/);
+});
+
+test('a phone from before rates: its one rate is edited with setRate, more rates are refused', async () => {
+  const c = fakeConnection(), src = createLinkedSource(c, fakeStore());
+  c.emit('message', { t: 'snapshot', lessons: [], rateCents: 3000, seasonStartMonth: 12 }); await tick();
+  const p = src.saveRate({ id: 1, title: 'Standard', cents: 3500, color: 0 }); await tick();
+  assert.deepEqual(c.sent.map(m => [m.op, m.args]), [['setRate', { rateCents: 3500 }]]);
+  c.emit('message', { t: 'ack', id: c.sent[0].id, ok: true }); await p;
+  await assert.rejects(src.saveRate({ id: 0, title: 'Private', cents: 4500, color: 0 }), /Update Karvo/);
 });

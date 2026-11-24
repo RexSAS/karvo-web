@@ -1,6 +1,7 @@
 // Same format as Android CsvExporter.kt / CsvImporter.kt, so files move between phone and PC.
-export const CSV_HEADER = 'date,student,duration_minutes,duration_hours,notes,paid_on';
+export const CSV_HEADER = 'date,student,duration_minutes,duration_hours,notes,paid_on,rate';
 const HEADER_V1 = 'date,student,duration_minutes,duration_hours,notes';
+const HEADER_V2 = HEADER_V1 + ',paid_on'; // before rates
 import { MAX_DURATION_MINUTES } from './validate.js';
 
 export class BackupFormatError extends Error {
@@ -14,9 +15,10 @@ export const csvFileBytes = csv => new Uint8Array([0xef, 0xbb, 0xbf, ...new Text
 
 const field = v => /[",\r\n]/.test(v) ? `"${v.replaceAll('"', '""')}"` : v;
 
-export function lessonsToCsv(lessons) {
+/** rateTitle names each lesson's rate (pay(...).titleOf): rate ids differ between devices, titles don't. */
+export function lessonsToCsv(lessons, rateTitle = () => '') {
   const rows = [...lessons].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id).map(l =>
-    [l.date, l.student, String(l.durationMinutes), durationHoursText(l.durationMinutes), l.notes ?? '', l.paidOn ?? '']
+    [l.date, l.student, String(l.durationMinutes), durationHoursText(l.durationMinutes), l.notes ?? '', l.paidOn ?? '', rateTitle(l)]
       .map(field).join(','));
   return [CSV_HEADER, ...rows].map(r => r + '\r\n').join('');
 }
@@ -27,22 +29,23 @@ const isDate = s => {
   return u.getUTCFullYear() === y && u.getUTCMonth() === m - 1 && u.getUTCDate() === d;
 };
 
-/** All-or-nothing: any invalid record throws BackupFormatError. Returned lessons have no id. */
-export function parseLessonsCsv(text) {
+/** All-or-nothing: any invalid record throws BackupFormatError. Returned lessons have no id. rateId turns a rate
+ *  title into the rate's id; files from before rates (and unknown titles) give null, the default rate. */
+export function parseLessonsCsv(text, rateId = () => null) {
   const records = tokenize(text.replace(/^﻿/, ''));
   const header = records[0]?.fields.join(',');
-  const count = header === CSV_HEADER ? 6 : header === HEADER_V1 ? 5 : 0;
+  const count = header === CSV_HEADER ? 7 : header === HEADER_V2 ? 6 : header === HEADER_V1 ? 5 : 0;
   if (!count) throw new BackupFormatError(1, 'Not a Karvo file');
   return records.slice(1).map(({ line, fields: f }) => {
     if (f.length !== count) throw new BackupFormatError(line, `Expected ${count} fields, found ${f.length}`);
-    const [date, studentText, minutesText, , notesText] = f, paidOn = f[5] ?? '';
+    const [date, studentText, minutesText, , notesText] = f, paidOn = f[5] ?? '', rate = f[6]?.trim() ?? '';
     if (!isDate(date)) throw new BackupFormatError(line, `Invalid date "${date}"`);
     const student = studentText.trim();
     if (!student) throw new BackupFormatError(line, 'Missing student');
     const minutes = /^\d+$/.test(minutesText) ? Number(minutesText) : NaN;
     if (!(minutes >= 1 && minutes <= MAX_DURATION_MINUTES)) throw new BackupFormatError(line, `Invalid duration "${minutesText}"`);
     if (paidOn && !isDate(paidOn)) throw new BackupFormatError(line, `Invalid paid date "${paidOn}"`);
-    return { date, student, durationMinutes: minutes, notes: notesText.trim() || null, paidOn: paidOn || null };
+    return { date, student, durationMinutes: minutes, notes: notesText.trim() || null, paidOn: paidOn || null, rateId: rate ? rateId(rate) : null };
   });
 }
 

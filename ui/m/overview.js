@@ -1,5 +1,5 @@
 // Overview tab: the season's hours and money (with the eye), unpaid total, months with paid/unpaid, and the charts.
-import { earningsCents } from '../../domain/earnings.js';
+import { payOf } from '../../domain/rates.js';
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { paidStatus, monthPaidOn, unpaidTotals } from '../../domain/paid.js';
 import { seasonOf, seasonLabel, seasonMonths } from '../../domain/seasons.js';
@@ -19,11 +19,12 @@ const sum = ls => ls.reduce((s, l) => s + l.durationMinutes, 0);
 const monthName = m => new Date(m + '-15').toLocaleString(locale(), { month: 'long', year: 'numeric' });
 
 export function renderOverview(view, state, actions) {
-  const { lessons, rateCents, seasonStartMonth } = state.snapshot;
+  const { lessons, seasonStartMonth } = state.snapshot, pay = payOf(state.snapshot);
   const now = seasonOf(today(), seasonStartMonth);
   const season = { ...now, startYear: now.startYear + seasonShift };
   const s = lifetime ? lifetimeStats(lessons, seasonStartMonth) : seasonStats(lessons, season), months = seasonMonths(season);
-  const unpaid = unpaidTotals(lessons, today(), rateCents);
+  const unpaid = unpaidTotals(lessons, today(), pay);
+  const inScope = lifetime ? lessons : lessons.filter(l => seasonOf(l.date, seasonStartMonth).startYear === season.startYear);
   const withLessons = months.filter(m => lessons.some(l => monthOf(l.date) === m)).reverse();
   const eye = state.showMoney ? t('hideMoney') : t('showMoney');
   // The badge of the season shown (Lifetime: this season's), right of the hours.
@@ -38,7 +39,7 @@ export function renderOverview(view, state, actions) {
       <div><div class="l">${esc(t('hours'))}</div><div class="v">${formatHours(s.minutes).replace(/ (h|min)/g, '<small> $1</small>')}</div>
         ${diff ? `<div class="m-vs">${esc(t('seasonVsLast', diff, seasonLabel({ ...now, startYear: now.startYear - 1 })))}</div>` : ''}
         <button class="m-badge-slot" data-badges aria-label="${esc(t('badges'))}: ${esc(badge ? t('badge_' + badge.id) : t('badgeNone'))}">${badgeSvg(badge, 64)}<span>${esc(badge ? t('badge_' + badge.id) : '')}</span></button></div>
-      <div><div class="l">${esc(t('earned'))}</div><div class="v">${moneyHtml(earningsCents(s.minutes, rateCents))}</div></div>
+      <div><div class="l">${esc(t('earned'))}</div><div class="v">${moneyHtml(pay.earnings(inScope))}</div></div>
       <div><div class="l">${esc(t('lessons'))}</div><div class="v">${s.lessonCount}</div></div>
       <div><div class="l">${esc(t('unpaidTotal'))}</div><div class="v gold">${unpaid.minutes ? moneyHtml(unpaid.earningsCents, 'gold') : esc(t('allPaid'))}</div></div>
     </div><div class="row"><button class="btn small" data-eye>${esc(eye)}</button></div></div>
@@ -49,7 +50,7 @@ export function renderOverview(view, state, actions) {
       return `<div class="m-mrow"><span class="name">${esc(monthName(m))}</span>
         <span class="act">${st === 'PAID' ? `<button class="btn small" data-unpay="${m}">${esc(t('markUnpaid'))}</button>`
           : `<button class="btn small gold" data-pay="${m}">${esc(t('markPaid'))}</button>`}</span>
-        <span class="sub">${formatHours(min)} · ${moneyHtml(earningsCents(min, rateCents))} · <span class="${st === 'PAID' ? '' : 'gold'}">${esc(status)}</span></span></div>`;
+        <span class="sub">${formatHours(min)} · ${moneyHtml(pay.earnings(ls))} · <span class="${st === 'PAID' ? '' : 'gold'}">${esc(status)}</span></span></div>`;
     }).join('') : `<p class="m-note">${esc(t('noLessonsSeason'))}</p>`}</div>`}
     ${s.lessonCount ? `<div class="m-card"><h2>${esc(t(lifetime ? 'hoursPerSeason' : 'hoursPerMonth'))}</h2><div class="m-chart" data-c="month"></div></div>
     <div class="m-card"><h2>${esc(t('topStudents'))}</h2><div class="m-donut" data-c="donut"></div></div>

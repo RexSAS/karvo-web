@@ -4,6 +4,7 @@ import { openStore } from '../../source/idbStore.js';
 import { createLocalSource } from '../../source/local.js';
 import { students, studentKey } from '../../domain/stats.js';
 import { lessonsToCsv, csvFileBytes, csvFileName } from '../../domain/csv.js';
+import { payOf } from '../../domain/rates.js';
 import { today } from '../../domain/dates.js';
 import { esc } from '../html.js';
 import { renderLessons, openLessonSheet, openEventSheet } from './lessons.js';
@@ -71,10 +72,10 @@ export const actions = {
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
   toggleMoney() { state.showMoney = !state.showMoney; glint(state.showMoney); render(); },
   add() {
-    openLessonSheet({ names: students(state.snapshot.lessons).map(s => s.name), onSave: l => state.source.addLesson(l) });
+    openLessonSheet({ names: students(state.snapshot.lessons).map(s => s.name), pay: payOf(state.snapshot), onSave: l => state.source.addLesson(l) });
   },
   edit(lesson) {
-    openLessonSheet({ lesson, names: students(state.snapshot.lessons).map(s => s.name),
+    openLessonSheet({ lesson, names: students(state.snapshot.lessons).map(s => s.name), pay: payOf(state.snapshot),
       onSave: l => state.source.updateLesson(l), onDelete: id => state.source.deleteLesson(id) });
   },
   editEvent(id, date) {
@@ -84,7 +85,7 @@ export const actions = {
   },
   /** CSV through the Share sheet; only a completed share counts as a backup. */
   async backupNow() {
-    const file = new File([csvFileBytes(lessonsToCsv(state.snapshot.lessons))], csvFileName(today()), { type: 'text/csv' });
+    const file = new File([csvFileBytes(lessonsToCsv(state.snapshot.lessons, payOf(state.snapshot).titleOf))], csvFileName(today()), { type: 'text/csv' });
     if (navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file] }); } catch { return false; } // cancelled: not a backup
     } else {

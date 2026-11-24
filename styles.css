@@ -502,3 +502,34 @@ body.m { overflow: hidden; background: var(--bg); }
 .b-hero .medal, .m-badge-hero .medal { animation: pop var(--t-med) 100ms var(--ease) both; }
 @keyframes badge-glint { 0% { transform: translateX(0); } 30%, 100% { transform: translateX(150px); } }
 @media (prefers-reduced-motion: reduce) { .medal .rays, .medal .glint, .b-hero .medal, .m-badge-hero .medal { animation: none; } }
+
+/* Hourly rates (PC settings and iPhone settings), the lesson form's rate flags, and the dot on lessons not on the default. */
+.rate-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; vertical-align: middle; }
+.lesson .dur .rate-dot, .m-row .dur .rate-dot { margin-right: 6px; }
+.rates { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 10px; }
+.rates-h { font-weight: 600; margin-bottom: 4px; }
+.rates-empty { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.rates > .btn { align-self: flex-start; margin-top: 6px; }
+.rate-row { display: flex; align-items: center; gap: 10px; }
+.rate-row > .rate-dot { width: 14px; height: 14px; }
+.rate-main { flex: 1; display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 6px 0; min-width: 0; }
+.rate-main b { font-weight: 600; }
+.rate-main span { color: var(--muted); font-size: 12px; }
+.rate-menu { position: relative; }
+.rate-menu summary { list-style: none; cursor: pointer; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); font-size: 20px; }
+.rate-menu summary::-webkit-details-marker { display: none; }
+.rate-menu summary:hover, .rate-menu[open] summary { background: var(--s5); }
+.rate-menu > div { position: absolute; right: 0; top: 38px; z-index: 5; min-width: 180px; display: flex; flex-direction: column; padding: 6px;
+  background: var(--s4); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px #0008; }
+.rate-menu > div button { text-align: left; padding: 9px 12px; border-radius: 8px; }
+.rate-menu > div button:hover:not(:disabled) { background: var(--s5); }
+.rate-menu > div button:disabled { opacity: .4; }
+.rate-flags, .rate-colors { border: 0; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.rate-flags legend, .rate-colors legend { padding: 0; margin-bottom: 6px; font-size: 12px; color: var(--muted); }
+.rate-flags .rate-flag { margin: 0; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-size: 13px; }
+.rate-flag input, .rate-colors input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rate-flag:has(input:checked) { background: var(--s5); border-color: var(--ink); }
+.rate-flag:has(input:focus-visible), .rate-colors label:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rate-colors label { margin: 0; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; border: 2px solid transparent; cursor: pointer; }
+.rate-colors label .rate-dot { width: 24px; height: 24px; }
+.rate-colors label:has(input:checked) { border-color: var(--ink); }

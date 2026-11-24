@@ -1,5 +1,6 @@
 // Fake lessons for trying the app (?demo). In memory only; seeded so every load looks the same.
 import { createSource, emptySnapshot } from './core.js';
+import { RATE_COLORS } from '../domain/rates.js';
 import { addDays, addMonths, monthOf, today, weekdayIndex } from '../domain/dates.js';
 
 const NAMES = ['Marco', 'Giulia', 'Luca', 'Sofia', 'Matteo', 'Chiara', 'Andrea', 'Elena', 'Tommaso', 'Anna'];
@@ -16,12 +17,14 @@ export function demoLessons(now = today()) {
       id: lessons.length + 1, date: d, durationMinutes: [60, 90, 120, 120, 180][Math.floor(rnd() * 5)],
       student: NAMES[Math.floor(Math.pow(rnd(), 1.6) * NAMES.length)], notes: rnd() < .15 ? NOTES[Math.floor(rnd() * NOTES.length)] : null,
       paidOn: monthOf(d) < paidBefore ? addDays(addMonths(monthOf(d), 1) + '-01', 4) : null,
+      rateId: lessons.length % 5 === 4 ? 2 : null, // some private lessons (not from rnd: the demo stays as it was)
     });
   }
   return lessons;
 }
 
 export const createDemoSource = () =>
-  createSource({ status: 'demo', canEdit: true, initial: { ...emptySnapshot(), lessons: demoLessons(), rateCents: 3000, events: [
+  createSource({ status: 'demo', canEdit: true, initial: { ...emptySnapshot(), lessons: demoLessons(), rateCents: 3000, rates: [
+    { id: 1, title: 'Standard', cents: 3000, color: RATE_COLORS[0], isDefault: true }, { id: 2, title: 'Private', cents: 4500, color: RATE_COLORS[1], isDefault: false }], events: [
     { id: 1, date: today(), text: 'Ski school meeting 17:00' }, { id: 2, date: addDays(today(), 2), text: 'Race training · Tognola' },
     { id: 3, date: addDays(today(), 2), text: 'Dinner with the instructors' }, { id: 4, date: addDays(today(), 9), text: 'Avalanche course' }] } });

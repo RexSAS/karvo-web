@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { lessonsToCsv, parseLessonsCsv, durationHoursText, csvFileBytes, csvFileName, BackupFormatError } from '../domain/csv.js';
 
 const anna = { id: 1, date: '2026-01-05', student: 'Anna', durationMinutes: 50, notes: null, paidOn: null };
-const H = 'date,student,duration_minutes,duration_hours,notes,paid_on';
+const H = 'date,student,duration_minutes,duration_hours,notes,paid_on,rate';
+const H6 = 'date,student,duration_minutes,duration_hours,notes,paid_on'; // before rates
 
 test('export matches the Android format', () =>
-  assert.equal(lessonsToCsv([anna]), `${H}\r\n2026-01-05,Anna,50,0.83,,\r\n`));
+  assert.equal(lessonsToCsv([anna]), `${H}\r\n2026-01-05,Anna,50,0.83,,,\r\n`));
 
 test('export sorts by date then id', () => {
   const csv = lessonsToCsv([{ ...anna, id: 3, date: '2026-02-01' }, { ...anna, id: 2 }, anna]);
@@ -27,7 +28,7 @@ test('file name and BOM', () => {
 test('notes with commas, quotes and line breaks round-trip', () => {
   const l = { ...anna, notes: 'a, "b"\nc', paidOn: '2026-02-01' };
   const [back] = parseLessonsCsv(lessonsToCsv([l]));
-  assert.deepEqual(back, { date: l.date, student: 'Anna', durationMinutes: 50, notes: 'a, "b"\nc', paidOn: '2026-02-01' });
+  assert.deepEqual(back, { date: l.date, student: 'Anna', durationMinutes: 50, notes: 'a, "b"\nc', paidOn: '2026-02-01', rateId: null });
 });
 
 test('BOM and old 5-column header are accepted', () => {
@@ -42,13 +43,13 @@ test('not a Karvo file', () => {
 });
 
 test('bad row names its line and nothing is returned', () => {
-  assert.throws(() => parseLessonsCsv(`${H}\r\n2026-01-05,Anna,60,1,,\r\n2026-01-06,Anna,0,0,,\r\n`),
+  assert.throws(() => parseLessonsCsv(`${H6}\r\n2026-01-05,Anna,60,1,,\r\n2026-01-06,Anna,0,0,,\r\n`),
     e => e.line === 3 && e.message === 'Line 3: Invalid duration "0"');
-  assert.throws(() => parseLessonsCsv(`${H}\r\n2026-13-05,Anna,60,1,,\r\n`), e => e.message === 'Line 2: Invalid date "2026-13-05"');
-  assert.throws(() => parseLessonsCsv(`${H}\r\n2026-01-05, ,60,1,,\r\n`), e => e.message === 'Line 2: Missing student');
-  assert.throws(() => parseLessonsCsv(`${H}\r\n2026-01-05,A,60,1,\r\n`), e => e.message === 'Line 2: Expected 6 fields, found 5');
-  assert.throws(() => parseLessonsCsv(`${H}\r\n2026-01-05,A,60,1,,x\r\n`), e => e.message === 'Line 2: Invalid paid date "x"');
+  assert.throws(() => parseLessonsCsv(`${H6}\r\n2026-13-05,Anna,60,1,,\r\n`), e => e.message === 'Line 2: Invalid date "2026-13-05"');
+  assert.throws(() => parseLessonsCsv(`${H6}\r\n2026-01-05, ,60,1,,\r\n`), e => e.message === 'Line 2: Missing student');
+  assert.throws(() => parseLessonsCsv(`${H6}\r\n2026-01-05,A,60,1,\r\n`), e => e.message === 'Line 2: Expected 6 fields, found 5');
+  assert.throws(() => parseLessonsCsv(`${H6}\r\n2026-01-05,A,60,1,,x\r\n`), e => e.message === 'Line 2: Invalid paid date "x"');
 });
 
 test('a quoted line break moves the next record line number', () =>
-  assert.throws(() => parseLessonsCsv(`${H}\r\n2026-01-05,A,60,1,"x\ny",\r\n2026-01-05,A,abc,1,,\r\n`), e => e.line === 4));
+  assert.throws(() => parseLessonsCsv(`${H6}\r\n2026-01-05,A,60,1,"x\ny",\r\n2026-01-05,A,abc,1,,\r\n`), e => e.line === 4));

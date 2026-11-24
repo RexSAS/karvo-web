@@ -1,5 +1,5 @@
-// Settings: hourly rate, season start, CSV import/export, and deleting this PC's backup.
-import { parseRateCents, formatRateText } from '../domain/rate.js';
+// Settings: hourly rates, season start, CSV import/export, and deleting this PC's backup.
+import { ratesListHtml, wireRates } from './rates.js';
 import { pickTextFile, downloadCsv } from './files.js';
 import { esc } from './html.js';
 import { reportFormHtml, wireReport, showMyReports } from './report.js';
@@ -23,6 +23,18 @@ function openReportDialog(mine) {
   else wireReport(d, tEn, `${APP_VERSION} PC`, close);
 }
 
+/** A small dialog over the settings (the rate form). */
+function openDialog(html) {
+  const d = document.createElement('dialog');
+  d.style.width = '360px';
+  d.innerHTML = html;
+  document.body.append(d);
+  const close = () => { d.close(); d.remove(); };
+  d.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  d.showModal();
+  return { el: d, close };
+}
+
 const REASONS = { manual: 'Manual', sync: 'Before sync', import: 'Before import', restore: 'Before restore' };
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -34,7 +46,7 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
   d.style.width = '460px';
   d.innerHTML = `<form method="dialog" novalidate>
     <h3>Settings</h3>
-    <label for="s-rate">Hourly rate (€)</label><input id="s-rate" inputmode="decimal" placeholder="e.g. 30" value="${formatRateText(snapshot.rateCents)}">
+    <div data-rates></div>
     <label for="s-season">Season starts in</label>
     <select id="s-season">${MONTHS.map((m, i) => `<option value="${i + 1}" ${i + 1 === snapshot.seasonStartMonth ? 'selected' : ''}>${m}</option>`).join('')}</select>
     <div class="err" data-err role="alert"></div>
@@ -57,7 +69,14 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
     <div class="btns" style="justify-content:flex-start;margin-top:4px"><button type="button" class="btn small" data-report>Report a problem</button><button type="button" class="btn small" data-my-reports>My reports</button></div>
   </form>`;
   document.body.append(d);
-  const $ = s => d.querySelector(s), close = () => { d.close(); d.remove(); };
+  const $ = s => d.querySelector(s);
+  // The rates list follows every change (from here, or from the phone while linked).
+  const showRates = () => {
+    $('[data-rates]').innerHTML = ratesListHtml(getSnapshot(), tEn);
+    wireRates($('[data-rates]'), { getSnapshot, source, t: tEn, open: openDialog, onError: msg => say(msg, true) });
+  };
+  const unsubscribe = source.subscribe(showRates);
+  const close = () => { unsubscribe(); d.close(); d.remove(); };
   const say = (text, isErr) => { $('[data-msg]').textContent = isErr ? '' : text; $('[data-err]').textContent = isErr ? text : ''; };
   $('[data-cancel]').onclick = close;
   $('[data-report]').onclick = () => { close(); openReportDialog(false); };
@@ -65,9 +84,6 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
   d.addEventListener('cancel', e => { e.preventDefault(); close(); });
   $('form').onsubmit = async e => {
     e.preventDefault();
-    const rate = parseRateCents($('#s-rate').value);
-    if (rate.invalid) return say('Enter a rate like 30 or 27.50', true);
-    if (rate.cents !== snapshot.rateCents) await source.setRate(rate.cents);
     const season = Number($('#s-season').value);
     if (season !== snapshot.seasonStartMonth) await source.setSeasonStart(season);
     close();
@@ -80,7 +96,7 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
         · ${esc(REASONS[b.reason] ?? b.reason)} · <b>${b.lessonCount} lesson${b.lessonCount === 1 ? '' : 's'}</b></span>
       <span><button type="button" class="btn small" data-csv="${esc(b.id)}">CSV</button>${backups.canRestore ? `<button type="button" class="btn small" data-restore="${esc(b.id)}">Restore</button>` : ''}</span></div>`).join('')
       : '<div class="sub" style="color:var(--muted);font-size:12px">No backups yet</div>';
-    el.querySelectorAll('[data-csv]').forEach(btn => btn.onclick = () => downloadCsv(list.find(b => b.id === btn.dataset.csv).snapshot.lessons));
+    el.querySelectorAll('[data-csv]').forEach(btn => btn.onclick = () => downloadCsv(list.find(b => b.id === btn.dataset.csv).snapshot));
     el.querySelectorAll('[data-restore]').forEach(btn => btn.onclick = async () => {
       const b = list.find(x => x.id === btn.dataset.restore);
       if (!confirm(`Replace this PC's copy with the backup of ${b.lessonCount} lessons? The current copy is backed up first.`)) return;
@@ -105,7 +121,7 @@ export function openSettings(source, getSnapshot, link = null, backups = null) {
       say(`Added ${added} lesson${added === 1 ? '' : 's'}, skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}`);
     } catch (err) { say(err.message, true); }
   };
-  $('[data-export]').onclick = () => downloadCsv(getSnapshot().lessons); // current data, including imports made in this dialog
+  $('[data-export]').onclick = () => downloadCsv(getSnapshot()); // current data, including imports made in this dialog
   $('[data-unlink]')?.addEventListener('click', async () => {
     if (!confirm(`Unlink ${link.peerName}? This PC keeps its read-only backup.`)) return;
     await link.unlink();

@@ -1,5 +1,6 @@
 // Picking a CSV from disk and downloading one.
 import { lessonsToCsv, csvFileBytes, csvFileName } from '../domain/csv.js';
+import { payOf } from '../domain/rates.js';
 import { today } from '../domain/dates.js';
 
 export function pickTextFile(accept = '.csv,text/csv') {
@@ -11,8 +12,10 @@ export function pickTextFile(accept = '.csv,text/csv') {
   });
 }
 
-export function downloadCsv(lessons) {
-  const url = URL.createObjectURL(new Blob([csvFileBytes(lessonsToCsv(lessons))], { type: 'text/csv' }));
+/** The snapshot's lessons, each with its rate's title. */
+export function downloadCsv(snapshot) {
+  const { lessons } = snapshot;
+  const url = URL.createObjectURL(new Blob([csvFileBytes(lessonsToCsv(lessons, payOf(snapshot).titleOf))], { type: 'text/csv' }));
   Object.assign(document.createElement('a'), { href: url, download: csvFileName(today()) }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -1,7 +1,7 @@
 // One student's window (as Android StudentScreen): totals, the last 6 months, this season against the last, all their lessons.
 import { studentDetail } from '../domain/stats.js';
 import { seasonLabel } from '../domain/seasons.js';
-import { earningsCents } from '../domain/earnings.js';
+import { payOf } from '../domain/rates.js';
 import { formatHours, today, todayIn } from '../domain/dates.js';
 import { moneyHtml, paintMoney } from './money.js';
 import { areaChart } from './stats.js';
@@ -18,7 +18,7 @@ export function openStudent(key, { snapshot, showMoney }, actions) {
   const fig = (v, l) => `<div><div class="v">${v}</div><div class="sub">${l}</div></div>`;
   d.innerHTML = `<form method="dialog"><h3>${esc(s.name)}</h3>
     <div class="st-figs">${fig(formatHours(s.totalMinutes), 'Total hours')}${fig(s.lessonCount, 'Lessons')}${fig(formatHours(s.averageMinutes), 'Average lesson')}
-      ${fig(moneyHtml(snapshot.rateCents == null ? null : earningsCents(s.totalMinutes, snapshot.rateCents), 'gold'), 'Earnings')}</div>
+      ${fig(moneyHtml(payOf(snapshot).earnings(s.months.flatMap(m => m.lessons)), 'gold'), 'Earnings')}</div>
     <div class="sub">First lesson ${day(s.firstLesson)} · last ${day(s.lastLesson)}</div>
     <h4>Last 6 months</h4><div class="chart" data-c="six"></div>
     <div class="st-figs">${fig(formatHours(s.thisSeasonMinutes), `This season · ${seasonLabel(s.season)}`)}${fig(formatHours(s.lastSeasonMinutes), 'Last season')}</div>

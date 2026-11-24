@@ -1,4 +1,6 @@
 // Lessons of the selected month, newest first, grouped by day. With a search or a paid filter: every match, grouped by month.
+import { payOf } from '../domain/rates.js';
+import { rateMarkHtml } from './rates.js';
 import { formatHours, monthOf } from '../domain/dates.js';
 import { filterLessons } from '../domain/stats.js';
 import { esc } from './html.js';
@@ -17,13 +19,13 @@ export const shownLessons = state => (isFiltering(state)
   ? filterLessons(state.snapshot.lessons, state.search, state.paidFilter)
   : state.snapshot.lessons.filter(l => monthOf(l.date) === state.view)).sort(newestFirst);
 
-const row = (l, when = '') => `<button class="lesson" data-id="${l.id}">
-  <span>${esc(l.student)}</span><span class="dur">${formatHours(l.durationMinutes)}</span>
+const row = (l, pay, when = '') => `<button class="lesson" data-id="${l.id}">
+  <span>${esc(l.student)}</span><span class="dur">${rateMarkHtml(pay, l)}${formatHours(l.durationMinutes)}</span>
   ${when || l.notes ? `<span class="note">${esc([when, l.notes].filter(Boolean).join(' · '))}</span>` : ''}</button>`;
 
 export function renderLessons(el, state, actions) {
   const { snapshot, view, selDay, source, paidFilter } = state;
-  const filtering = isFiltering(state), shown = shownLessons(state);
+  const filtering = isFiltering(state), shown = shownLessons(state), pay = payOf(snapshot);
   const keys = [...new Set(shown.map(l => filtering ? monthOf(l.date) : l.date))];
   const month = new Date(view + '-15').toLocaleString('en', { month: 'long' });
   const ro = source.canEdit ? '' : `disabled title="${READ_ONLY_TIP}"`;
@@ -43,8 +45,8 @@ export function renderLessons(el, state, actions) {
     <div class="scroll" id="lesson-list">${keys.length ? keys.map(k => {
       const ls = shown.filter(l => (filtering ? monthOf(l.date) : l.date) === k);
       return filtering
-        ? `<div class="day"><div class="day-h">${monthTitle(k)} · ${formatHours(sum(ls))}</div>${ls.map(l => row(l, dayTitle(l.date))).join('')}</div>`
-        : `<div class="day ${k === selDay ? 'sel' : ''}" data-d="${k}"><div class="day-h">${dayTitle(k)}</div>${ls.map(l => row(l)).join('')}</div>`;
+        ? `<div class="day"><div class="day-h">${monthTitle(k)} · ${formatHours(sum(ls))}</div>${ls.map(l => row(l, pay, dayTitle(l.date))).join('')}</div>`
+        : `<div class="day ${k === selDay ? 'sel' : ''}" data-d="${k}"><div class="day-h">${dayTitle(k)}</div>${ls.map(l => row(l, pay)).join('')}</div>`;
     }).join('') : `<div class="empty">${filtering ? 'No matching lessons.' : 'No lessons this month.'}</div>`}</div>
     <button class="add" ${source.canEdit ? 'title="Add lesson (N)"' : `disabled title="${READ_ONLY_TIP}"`}>+ Add lesson</button>`;
   const input = el.querySelector('#l-search');

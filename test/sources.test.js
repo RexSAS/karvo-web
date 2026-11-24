@@ -54,7 +54,8 @@ test('backup: loads a saved snapshot, rate is editable, clear empties it', async
   const store = fakeStore({ lessons: [], rateCents: 2500, seasonStartMonth: 12, syncedAt: null });
   const src = await createBackupSource(store);
   assert.equal(last(src).rateCents, 2500);
-  await src.setRate(3000);
+  assert.equal(last(src).rates[0].title, 'Standard'); // a copy from before rates: its rate is the default
+  await src.saveRate({ ...last(src).rates[0], cents: 3000 });
   assert.equal(store.data.rateCents, 3000);
   await src.clear();
   assert.equal(store.data, null);
@@ -74,7 +75,7 @@ test('a backup that failed to load is never overwritten', async () => {
   const store = { async load() { throw new Error('blocked'); }, async save() { saves++; }, async remove() { saves++; } };
   const src = await createBackupSource(store);
   await src.importCsv(CSV);
-  await src.setRate(3000);
+  await src.saveRate({ title: 'Standard', cents: 3000, color: 1 });
   assert.equal(saves, 0);
   assert.equal(src.storageError, true);
   assert.equal(last(src).lessons.length, 2);

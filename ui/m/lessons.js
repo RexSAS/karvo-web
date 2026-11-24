@@ -1,4 +1,6 @@
 // Lessons tab: months newest first with their hours, search, and the add/edit/delete sheet.
+import { payOf } from '../../domain/rates.js';
+import { rateMarkHtml, rateFlagsHtml, readRateFlag } from '../rates.js';
 import { formatHours, monthOf, today } from '../../domain/dates.js';
 import { validateLesson, parseDurationField } from '../../domain/validate.js';
 import { students, filterLessons } from '../../domain/stats.js';
@@ -13,7 +15,7 @@ const dayTitle = d => new Date(d + 'T12:00').toLocaleDateString(locale(), { week
 export function renderLessons(view, { snapshot, search }, actions) {
   const list = filterLessons(snapshot.lessons, search)
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
-  const months = [...new Set(list.map(l => monthOf(l.date)))];
+  const months = [...new Set(list.map(l => monthOf(l.date)))], pay = payOf(snapshot);
   const soon = upcomingDays(snapshot.events, today(), 3);
   const when = n => (n === 0 ? t('today') : n === 1 ? t('tomorrow') : t('inDays', n));
   const eventsCard = search.trim() ? '' : `<div class="m-card m-events"><div class="m-events-head"><h2>${esc(t('events'))}</h2><button class="btn small" data-event-new>${esc(t('addEvent'))}</button></div>
@@ -23,7 +25,7 @@ export function renderLessons(view, { snapshot, search }, actions) {
     ${months.length ? months.map(m => {
       const ls = list.filter(l => monthOf(l.date) === m);
       return `<div class="m-month"><span>${esc(monthTitle(m))}</span><span>${formatHours(ls.reduce((s, l) => s + l.durationMinutes, 0))}</span></div>
-        ${ls.map(l => `<button class="m-row" data-id="${l.id}"><span class="who">${esc(l.student)}</span><span class="dur">${formatHours(l.durationMinutes)}</span>
+        ${ls.map(l => `<button class="m-row" data-id="${l.id}"><span class="who">${esc(l.student)}</span><span class="dur">${rateMarkHtml(pay, l)}${formatHours(l.durationMinutes)}</span>
           <span class="when">${esc(dayTitle(l.date))}</span>${l.notes ? `<span class="note">${esc(l.notes)}</span>` : ''}</button>`).join('')}`;
     }).join('') : snapshot.lessons.length ? `<div class="m-empty">${esc(t('noResults'))}</div>`
       // No lessons at all: Kevin asleep in the snow (the SVG carries its own small animation).
@@ -38,7 +40,7 @@ export function renderLessons(view, { snapshot, search }, actions) {
 }
 
 /** Add or edit one lesson; onSave/onDelete return promises (the sheet stays open with the error if they fail). */
-export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
+export function openLessonSheet({ lesson = null, names, pay, onSave, onDelete }) {
   const s = openSheet(`<form novalidate>
     <h3>${esc(t(lesson ? 'editLesson' : 'newLesson'))}</h3>
     <label for="ml-date">${esc(t('date'))}</label><input type="date" id="ml-date" value="${esc(lesson?.date ?? today())}">
@@ -48,6 +50,7 @@ export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
       <div><label for="ml-h">${esc(t('hours'))}</label><input id="ml-h" type="number" inputmode="numeric" min="0" max="24" value="${lesson ? Math.floor(lesson.durationMinutes / 60) : 1}"></div>
       <div><label for="ml-m">${esc(t('minutes'))}</label><input id="ml-m" type="number" inputmode="numeric" min="0" max="59" step="5" value="${lesson ? lesson.durationMinutes % 60 : 0}"></div>
     </div>
+    ${rateFlagsHtml(pay, lesson, t)}
     <label for="ml-notes">${esc(t('notes'))}</label><textarea id="ml-notes" rows="2">${esc(lesson?.notes ?? '')}</textarea>
     <div class="err" role="alert"></div>
     <div class="btns">
@@ -66,7 +69,8 @@ export function openLessonSheet({ lesson = null, names, onSave, onDelete }) {
     const errors = validateLesson(student, h, m);
     if (!date) { err.textContent = t('pickDate'); return; }
     if (errors.length) { err.textContent = errors.map(x => t(x)).join(' · '); return; }
-    run(() => onSave({ ...(lesson ?? { paidOn: null }), date, student: student.trim(), durationMinutes: h * 60 + m, notes: $('#ml-notes').value.trim() || null }));
+    run(() => onSave({ ...(lesson ?? { paidOn: null }), date, student: student.trim(), durationMinutes: h * 60 + m, notes: $('#ml-notes').value.trim() || null,
+      rateId: readRateFlag(s.el, lesson?.rateId ?? null) }));
   };
   return s;
 }

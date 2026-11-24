@@ -1,7 +1,8 @@
 // A printable statement of what the Lessons card shows (the month, or a search like one student's unpaid lessons).
 // Filled just before printing, so the browser's own Ctrl+P prints it too; styles.css shows only #print on paper.
 import { formatHours, today } from '../domain/dates.js';
-import { earningsCents, formatEuro } from '../domain/earnings.js';
+import { formatEuro } from '../domain/earnings.js';
+import { payOf } from '../domain/rates.js';
 import { esc } from './html.js';
 import { shownLessons, isFiltering } from './lessons.js';
 
@@ -13,9 +14,12 @@ const LOGO = `<svg class="logo" viewBox="18 24.5 72 54" aria-hidden="true"><circ
 
 export function statementHtml(state) {
   const ls = shownLessons(state).reverse(); // oldest first, as on a bill
-  const { rateCents } = state.snapshot, sum = xs => xs.reduce((s, l) => s + l.durationMinutes, 0);
+  const pay = payOf(state.snapshot), sum = xs => xs.reduce((s, l) => s + l.durationMinutes, 0);
+  // The rates these lessons use, for the Total line ("€30 per hour", or each rate by name when there are several).
+  const used = [...new Set(ls.map(l => pay.rateOf(l)))].filter(Boolean);
+  const rateNote = used.length === 1 ? `${formatEuro(used[0].cents)} per hour` : used.map(r => `${esc(r.title)} ${formatEuro(r.cents)}/h`).join(' · ');
   const multiYear = ls.length > 0 && ls[0].date.slice(0, 4) !== ls.at(-1).date.slice(0, 4);
-  const minutes = sum(ls), unpaid = sum(ls.filter(l => !l.paidOn)), withRate = rateCents != null;
+  const minutes = sum(ls), unpaidLs = ls.filter(l => !l.paidOn), unpaid = sum(unpaidLs), withRate = pay.isSet;
   const what = isFiltering(state)
     ? [state.search.trim() && `“${state.search.trim()}”`, state.paidFilter === false && 'not paid', state.paidFilter === true && 'paid'].filter(Boolean).join(' · ')
     : monthTitle(state.view);
@@ -23,13 +27,13 @@ export function statementHtml(state) {
   const kpi = (label, value, cls = '') => `<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${value}</div></div>`;
   return `<div class="st-head">${LOGO}<div class="brand">Karvo<small>Ski lesson hours</small></div>
       <div class="doc"><h1>Lesson statement</h1><div>${esc(what)}</div>${ls.length ? `<div class="sub">${day(ls[0].date)} – ${day(ls.at(-1).date)}</div>` : ''}</div></div>
-    <div class="kpis">${kpi('Lessons', ls.length)}${kpi('Hours', formatHours(minutes))}${withRate ? kpi('Amount', formatEuro(earningsCents(minutes, rateCents)), 'main') : ''}${withRate && unpaid ? kpi('Not paid yet', formatEuro(earningsCents(unpaid, rateCents)), 'owed') : ''}</div>
+    <div class="kpis">${kpi('Lessons', ls.length)}${kpi('Hours', formatHours(minutes))}${withRate ? kpi('Amount', formatEuro(pay.earnings(ls)), 'main') : ''}${withRate && unpaid ? kpi('Not paid yet', formatEuro(pay.earnings(unpaidLs)), 'owed') : ''}</div>
     <table><thead><tr><th>Date</th><th>Student</th><th class="num">Hours</th>${withRate ? '<th class="num">Amount</th>' : ''}<th>Payment</th></tr></thead>
     <tbody>${ls.map((l, i) => {
       const first = !i || l.date !== ls[i - 1].date; // the date only on a day's first lesson
-      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(earningsCents(l.durationMinutes, rateCents))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
+      return `<tr${i && first ? ' class="newday"' : ''}><td class="date">${first ? dayRow(l.date, multiYear) : ''}</td><td>${esc(l.student)}</td><td class="num">${formatHours(l.durationMinutes)}</td>${money(pay.earnings([l]))}<td class="pay">${l.paidOn ? `Paid ${day(l.paidOn)}` : '<span class="due">Not paid</span>'}</td></tr>`;
     }).join('')}
-    <tr class="total"><td colspan="2">Total${withRate ? `<span class="rate">${formatEuro(rateCents)} per hour</span>` : ''}</td><td class="num">${formatHours(minutes)}</td>${money(earningsCents(minutes, rateCents))}<td></td></tr></tbody></table>
+    <tr class="total"><td colspan="2">Total${withRate && rateNote ? `<span class="rate">${rateNote}</span>` : ''}</td><td class="num">${formatHours(minutes)}</td>${money(pay.earnings(ls))}<td></td></tr></tbody></table>
     <div class="st-foot"><span>Printed ${day(today())}</span><span>karvo.rxsas.it</span></div>`;
 }
 
