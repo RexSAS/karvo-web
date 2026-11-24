@@ -534,8 +534,16 @@ body.m { overflow: hidden; background: var(--bg); }
 .rate-colors label .rate-dot { width: 24px; height: 24px; }
 .rate-colors label:has(input:checked) { border-color: var(--ink); }
 
-/* Rate filter chips (2+ rates): the rate's dot; picked, it lights up like the paid ones. */
-.chip.rate .rate-dot { width: 8px; height: 8px; }
-.chip.rate[aria-pressed="true"] { background: var(--s5); border-color: var(--ink); color: var(--ink); }
-.chip.rate[aria-pressed="true"] .n { background: var(--ink); color: var(--s2); }
-.m-chips .chip { min-height: 36px; padding: 6px 8px 6px 12px; font-size: 14px; }
+/* Rate filter chips (2+ rates): their own row; a picked chip lights up in its rate's colour (--c), like Paid and Not paid do in theirs. */
+.chips.rate-chips { margin-top: -2px; }
+.chip.rate .rate-dot { width: 8px; height: 8px; box-shadow: 0 0 6px var(--c); }
+.chip.rate.none { opacity: .45; }
+.chip.rate[aria-pressed="true"] { opacity: 1; background: color-mix(in srgb, var(--c) 20%, transparent); border-color: var(--c); color: var(--ink);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 30%, transparent); }
+.chip.rate[aria-pressed="true"] .n { background: var(--c); color: #0B1030; font-weight: 600; }
+/* iPhone: one row under the search that scrolls sideways, fading at the edges, with finger-sized chips. */
+.m-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 10px; padding: 2px 16px 4px;
+  mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
+.m-chips::-webkit-scrollbar { display: none; }
+.m-chips .chip { flex: none; min-height: 36px; padding: 6px 8px 6px 12px; font-size: 14px; }
+.m-chips .chip .n { font-size: 12px; }

@@ -8,7 +8,7 @@ import { reportFormHtml, wireReport, showMyReports } from '../report.js';
 import { openSheet } from './sheet.js';
 import { t, getLang, locale } from './i18n.js';
 
-export const APP_VERSION = 'web-10';
+export const APP_VERSION = 'web-11';
 const PRIVACY_URL = 'https://github.com/RexSAS/Karvo/blob/main/PRIVACY.md';
 
 export function renderSettings(view, state, actions) {

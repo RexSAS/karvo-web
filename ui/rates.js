@@ -15,7 +15,10 @@ export function rateMarkHtml(pay, lesson) {
 /** The lesson list's rate filter chips (2+ rates): count(rateId) says how many lessons each would show. */
 export function rateChipsHtml(pay, selected, count) {
   if (pay.rates.length < 2) return '';
-  return pay.rates.map(r => `<button type="button" class="chip rate" data-rate-filter="${r.id}" aria-pressed="${r.id === selected}">${dot(r.color)}${esc(r.title)}<span class="n">${count(r.id)}</span></button>`).join('');
+  return pay.rates.map(r => { // --c: the rate's colour, which a picked chip lights up in
+    const n = count(r.id);
+    return `<button type="button" class="chip rate ${n ? '' : 'none'}" style="--c:${rateCss(r.color)}" data-rate-filter="${r.id}" aria-pressed="${r.id === selected}">${dot(r.color)}${esc(r.title)}<span class="n">${n}</span></button>`;
+  }).join('');
 }
 
 /** The lesson form's rate flags; only when there's a choice (2+ rates). selectedId null = the default. */

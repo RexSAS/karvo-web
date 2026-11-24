@@ -51,7 +51,7 @@ export function renderLessons(el, state, actions) {
     <label class="l-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="l-search" type="search" placeholder="Search students and notes" aria-label="Search lessons" value="${esc(state.search)}">
       ${state.search ? '<button type="button" class="clear" aria-label="Clear search" title="Clear (Esc)">✕</button>' : '<kbd title="Press / to search">/</kbd>'}</label>
-    <div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}${rateChips}</div>${eventsPanel}
+    <div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}</div>${rateChips ? `<div class="chips rate-chips">${rateChips}</div>` : ''}${eventsPanel}
     <div class="scroll" id="lesson-list">${keys.length ? keys.map(k => {
       const ls = shown.filter(l => (filtering ? monthOf(l.date) : l.date) === k);
       return filtering
