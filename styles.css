@@ -547,3 +547,16 @@ body.m { overflow: hidden; background: var(--bg); }
 .m-chips::-webkit-scrollbar { display: none; }
 .m-chips .chip { flex: none; min-height: 36px; padding: 6px 8px 6px 12px; font-size: 14px; }
 .m-chips .chip .n { font-size: 12px; }
+
+/* The filter button by the search: the chips stay folded until it is pressed; a badge counts the filters that are on. */
+.l-searchrow, .m-searchrow { display: flex; align-items: center; gap: 8px; }
+.l-searchrow .l-search { flex: 1; min-width: 0; }
+.m-searchrow .m-search { flex: 1; min-width: 0; margin-bottom: 0; }
+.m-searchrow { margin-bottom: 8px; }
+.filter-btn { position: relative; flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--muted);
+  border: 1px solid var(--line); background: #FFFFFF08; }
+.m-searchrow .filter-btn { width: 44px; height: 44px; }
+.filter-btn svg { width: 17px; height: 17px; }
+.filter-btn:hover, .filter-btn[aria-expanded="true"] { background: var(--s5); color: var(--ink); }
+.filter-btn .badge { position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: var(--gold); color: var(--on-gold);
+  font: 700 10px/17px var(--disp); text-align: center; }

@@ -35,7 +35,7 @@ const params = new URLSearchParams(location.search);
 const RELAY = /^ws:\/\/localhost(:\d+)?$/.test(params.get('relay') ?? '') ? params.get('relay') : RELAY_URL;
 
 const state = {
-  source: null, unsub: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false, search: '', paidFilter: null, rateFilter: null,
+  source: null, unsub: null, snapshot: emptySnapshot(), view: monthOf(today()), selDay: null, showMoney: false, search: '', paidFilter: null, rateFilter: null, filtersOpen: false,
   store: null, backup: null, conn: null, pairing: null, link: { paired: false, state: 'offline', peerName: '', phoneNewer: false },
 };
 
@@ -43,6 +43,7 @@ export const actions = {
   setSearch(q) { state.search = q; render(); },
   setPaidFilter(paid) { state.paidFilter = paid; render(); },
   setRateFilter(id) { state.rateFilter = id; render(); },
+  toggleFilters() { state.filtersOpen = !state.filtersOpen; render(); },
   setView(month) { state.view = month; state.selDay = null; render(); },
   selectDay(date) { state.view = monthOf(date); state.selDay = date; render(); },
   editEvent(date, id = null) {

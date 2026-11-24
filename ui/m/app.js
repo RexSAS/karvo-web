@@ -46,7 +46,7 @@ function backdrop() {
   return el;
 }
 
-const state = { tab: 'lessons', snapshot: null, meta: null, search: '', rateFilter: null, showMoney: false, source: null, store: null, links: null };
+const state = { tab: 'lessons', snapshot: null, meta: null, search: '', rateFilter: null, filtersOpen: false, showMoney: false, source: null, store: null, links: null };
 
 function fatal(message) {
   document.body.className = 'm';
@@ -71,6 +71,7 @@ export const actions = {
   flash(text, err = false) { state.flash = { text, err }; render(); },
   setSearch(q) { state.search = q; render({ keepFocus: true }); },
   setRateFilter(id) { state.rateFilter = id; render(); },
+  toggleFilters() { state.filtersOpen = !state.filtersOpen; render(); },
   toggleMoney() { state.showMoney = !state.showMoney; glint(state.showMoney); render(); },
   add() {
     openLessonSheet({ names: students(state.snapshot.lessons).map(s => s.name), pay: payOf(state.snapshot), onSave: l => state.source.addLesson(l) });

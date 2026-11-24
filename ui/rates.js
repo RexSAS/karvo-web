@@ -12,6 +12,12 @@ export function rateMarkHtml(pay, lesson) {
   return r && r !== pay.default ? `<span class="rate-dot" style="background:${rateCss(r.color)}" title="${esc(r.title)}" role="img" aria-label="${esc(r.title)}"></span>` : '';
 }
 
+const FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>';
+
+/** The button that opens the lesson filters; on, it carries how many filters are active. */
+export const filterButtonHtml = (open, active, label) =>
+  `<button type="button" class="filter-btn" data-filters aria-expanded="${open}" aria-label="${esc(label)}${active ? ` (${active})` : ''}" title="${esc(label)}">${FUNNEL}${active ? `<span class="badge">${active}</span>` : ''}</button>`;
+
 /** The lesson list's rate filter chips (2+ rates): count(rateId) says how many lessons each would show. */
 export function rateChipsHtml(pay, selected, count) {
   if (pay.rates.length < 2) return '';

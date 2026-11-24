@@ -1,6 +1,6 @@
 // Lessons of the selected month, newest first, grouped by day. With a search or a paid filter: every match, grouped by month.
 import { payOf, rateTest } from '../domain/rates.js';
-import { rateMarkHtml, rateChipsHtml } from './rates.js';
+import { rateMarkHtml, rateChipsHtml, filterButtonHtml } from './rates.js';
 import { formatHours, monthOf } from '../domain/dates.js';
 import { filterLessons } from '../domain/stats.js';
 import { esc } from './html.js';
@@ -45,13 +45,15 @@ export function renderLessons(el, state, actions) {
   // With 2+ rates, one chip per rate: its lessons only (with the search and the paid filter).
   const rateChips = rateChipsHtml(pay, onRate ? state.rateFilter : null, id => filterLessons(snapshot.lessons, state.search, paidFilter, rateTest(pay, id)).length);
   const typing = document.activeElement?.id === 'l-search';
+  // The filters stay folded behind a button by the search; it shows how many are on.
+  const active = (paidFilter != null) + (onRate ? 1 : 0), open = state.filtersOpen;
   el.innerHTML = `<div class="l-head"><h2>Lessons · ${filtering ? `${shown.length} found` : month}</h2>
       <button class="icon-btn small" data-print title="Print statement (Ctrl+P)" aria-label="Print statement">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></div>
-    <label class="l-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="l-search" type="search" placeholder="Search students and notes" aria-label="Search lessons" value="${esc(state.search)}">
-      ${state.search ? '<button type="button" class="clear" aria-label="Clear search" title="Clear (Esc)">✕</button>' : '<kbd title="Press / to search">/</kbd>'}</label>
-    <div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}</div>${rateChips ? `<div class="chips rate-chips">${rateChips}</div>` : ''}${eventsPanel}
+    <div class="l-searchrow"><label class="l-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="l-search" type="search" placeholder="Search lessons" aria-label="Search lessons" value="${esc(state.search)}">
+      ${state.search ? '<button type="button" class="clear" aria-label="Clear search" title="Clear (Esc)">✕</button>' : '<kbd title="Press / to search">/</kbd>'}</label>${filterButtonHtml(open, active, 'Filters')}</div>
+    ${open ? `<div class="chips">${chip(false, 'Not paid', '<i class="dot"></i>')}${chip(true, 'Paid', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>')}</div>${rateChips ? `<div class="chips rate-chips">${rateChips}</div>` : ''}` : ''}${eventsPanel}
     <div class="scroll" id="lesson-list">${keys.length ? keys.map(k => {
       const ls = shown.filter(l => (filtering ? monthOf(l.date) : l.date) === k);
       return filtering
@@ -72,6 +74,7 @@ export function renderLessons(el, state, actions) {
     const id = Number(b.dataset.rateFilter);
     actions.setRateFilter(onRate && state.rateFilter === id ? null : id);
   });
+  el.querySelector('[data-filters]').onclick = actions.toggleFilters;
   el.querySelector('[data-print]').onclick = () => print();
   el.querySelector('.add').onclick = actions.add;
   el.querySelector('[data-event-new]')?.addEventListener('click', () => actions.editEvent(selDay));
